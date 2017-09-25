@@ -209,6 +209,39 @@ void print_fused_euler_angles(mpudata_t *mpu)
 	fflush(stdout);
 }
 
+/**
+* Output in format expected by XCSoar LevilAHRS Driver:
+* $RPYL,Roll,Pitch,MagnHeading,SideSlip,YawRate,G,errorcode
+*
+* Error bits (not implemented yet):
+*   0: Roll gyro test failed  
+*   1: Roll gyro test failed 
+*   2: Roll gyro test failed 
+*   3: Acc X test failed 
+*   4: Acc Y test failed 
+*   5: Acc Z test failed 
+*   6: Watchdog test failed
+*   7: Ram test failed
+*   8: EEPROM access test failed
+*   9: EEPROM checksum test failed
+*  10: Flash checksum test failed
+*  11: Low voltage error
+*  12: High temperature error (>60 C)
+*  13: Inconsistent roll data between gyro and acc.
+*  14: Inconsistent pitch data between gyro and acc.
+*  15: Inconsistent yaw data between gyro and acc.
+*/
+void print_rpyl(mpudata_t *mpu)
+{
+	
+	printf("\r$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0	",
+	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE,
+	       		- (mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE),
+	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE);
+	fflush(stdout);
+	
+}
+
 void print_fused_quaternions(mpudata_t *mpu)
 {
 	printf("\rW: %0.2f X: %0.2f Y: %0.2f Z: %0.2f        ",
