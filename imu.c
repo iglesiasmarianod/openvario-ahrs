@@ -35,6 +35,7 @@
 
 int set_cal(int mag, char *cal_file);
 void read_loop(unsigned int sample_rate);
+void print_rpyl(mpudata_t *mpu);
 void print_fused_euler_angles(mpudata_t *mpu);
 void print_fused_quaternion(mpudata_t *mpu);
 void print_calibrated_accel(mpudata_t *mpu);
@@ -187,7 +188,8 @@ void read_loop(unsigned int sample_rate)
 
 	while (!done) {
 		if (mpu9150_read(&mpu) == 0) {
-			print_fused_euler_angles(&mpu);
+			print_rpyl(&mpu);
+			// print_fused_euler_angles(&mpu);
 			// printf_fused_quaternions(&mpu);
 			// print_calibrated_accel(&mpu);
 			// print_calibrated_mag(&mpu);
@@ -210,7 +212,8 @@ void print_fused_euler_angles(mpudata_t *mpu)
 }
 
 /**
-* Output in format expected by XCSoar LevilAHRS Driver:
+* output_rpyl: Output in NMEA format as
+* expected by XCSoar LevilAHRS Driver:
 * $RPYL,Roll,Pitch,MagnHeading,SideSlip,YawRate,G,errorcode
 *
 * Error bits (not implemented yet):
