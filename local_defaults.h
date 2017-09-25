@@ -27,14 +27,8 @@
 // To avoid having to pass the same command line switches when running
 // the test apps, you can specify the defaults for your platform here.
 
-// RPi I2C bus 
+// Openvario i2c bus
 #define DEFAULT_I2C_BUS 1
-
-// Gumstix Overo
-// #define DEFAULT_I2C_BUS 3
-
-// Gumstix Duovero
-// #define DEFAULT_I2C_BUS 2
 
 
 // platform independent
