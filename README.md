@@ -1,4 +1,10 @@
-# linux-mpu9150
+# linux-mpu9150-ov
+
+A slightly modified version of the Linux-MPU9150 sample app, for eventual use in the OpenVario (a gliding computer based on the Cubieboard 2).
+
+All code is based on the Linux-MPU9150 sample app by Pansenti. Original source is unavailable, but license file is intact.
+
+Intended for Cross-compiling using the Yocto build tools as used for OpenVario.
 
 An implementation of 9-axis data fusion on Linux using the [InvenSense MPU-9150 IMU][1]
 
@@ -14,28 +20,16 @@ point operations.
 Testing has been done with [Raspberry Pi][2] and [Gumstix Overo and Duovero][3] systems.
 The code should work fine with other small board systems like the [BeagleBones][4].
 
-We have our own boards incorporating the MPU9150s, but we also tested with the
-[Sparkfun MPU9150 Breakout Boards][5]
-
-[1]: http://www.invensense.com/mems/gyro/nineaxis.html     "InvenSense"
-[2]: http://www.raspberrypi.org/                           "Raspberry Pi"
-[3]: https://www.gumstix.com/                              "Gumstix"
-[4]: http://beagleboard.org/                               "Beagleboard"
-[5]: https://www.sparkfun.com/products/11486               "Sparkfun"
 
 
 # Fetch
 
-Use git to fetch the linux-mpu9150 project. You may have to install <code>git</code> on your
+Use git to fetch the linux-mpu9150-ov project. You may have to install <code>git</code> on your
 system first.
-
-For RPi users running Raspbian, use this command
-
-        sudo apt-get install git
 
 Then to clone the repository assuming you have an Internet connection
 
-        git clone https://github.com/Pansenti/linux-mpu9150.git
+        git clone https://github.com/jfwells/linux-mpu9150-ov.git
 
 
 # Build
