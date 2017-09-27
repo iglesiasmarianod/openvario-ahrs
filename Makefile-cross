@@ -8,16 +8,16 @@ ifeq ($(strip $(OETMP)),)
 	OETMP=${OE_BUILD_TMPDIR}-glibc
 endif
 
+OV_DEVICE = openvario-7-CH070
 
 TOOLDIR = $(OETMP)/sysroots/`uname -m`-linux/usr/bin
-#STAGEDIR = ${OETMP}/sysroots/armv7a-angstrom-linux-gnueabi/usr
-STAGEDIR = ${OETMP}/sysroots/openvario-7-CH070-tcbootstrap/usr
+STAGEDIR = ${OETMP}/sysroots/${OV_DEVICE}/usr
 
 LIBDIR = $(STAGEDIR)/lib
 INCDIR = $(STAGEDIR)/include
 
 # specific to Yocto toolchain for Angstrom
-CC = ${TOOLDIR}/arm-angstrom-linux-gnueabi.gcc-cross-initial-arm/arm-angstrom-linux-gnueabi-gcc
+CC = ${TOOLDIR}/arm-angstrom-linux-gnueabi/arm-angstrom-linux-gnueabi-gcc
 CFLAGS = -Wall -mfloat-abi=hard -mfpu=vfp -fsingle-precision-constant -B$(LIBDIR) -L${LIBDIR}
 
 ### end cross-build defs ###
