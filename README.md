@@ -22,17 +22,17 @@ Use git to fetch the code. Clone this repository.
 
 There will be three ways to compile and test the driver.
 
-1. Build the file as a recipe as part of the Openvario build system. This is not available yet.
-2. Cross-compile the code making reference to the OpenVario tool chain.
-3. Build the file on a Linux desktop/laptop computer. This is only really for developers who want to modify the code, as programmes are unlikely to do anything, other than tell you that the MPU9150 IMU is unavailable.
+1. Build the file as a recipe as part of the Openvario build system, then test the resultant image. This is not available yet.
+2. Cross-compile the code making reference to the OpenVario tool chain, and transfer the resultant files to your OpenVario.
+3. Build the file on a Linux desktop/laptop computer. This is only really for developers who want to modify the code and test that it compiles, as the resultant programmes will only run on the machine you compile it on, and are unlikely to do anything other than tell you that the MPU9150 IMU is unavailable.
 
 Option (2) uses <code>Makefile-cross</code>. Option (3) uses <code>Makefile-native</code>.
 
-For Options (1) and (2), remember to source the environment file for the Open Embedded toolchain. The exact command will depend on where the OpenVario build system is installed, but will be something like:
+For Options (1) and (2), remember to source the environment file for the OpenEmbedded toolchain. The exact command will depend on where the OpenVario build system is installed, but will be something like:
 
-<code> source ../rootfs/environemt-xxxxxxxx</code>
+        user@mydesktop:~$ source ../rootfs/environment-xxxxxxx
 
-A recommendation is to create a symbolic link to the make file you want to use.
+A recommendation is to create a symbolic link to the make file you want to use:
 
         user@mydesktop:~$ cd openvario-ahrs
         user@mydesktop:~/openvario-ahrs$ ln -s Makefile-native Makefile
