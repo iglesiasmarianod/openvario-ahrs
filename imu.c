@@ -29,13 +29,17 @@
 #include <getopt.h>
 #include <errno.h>
 
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+
 #include "mpu9150.h"
 #include "linux_glue.h"
 #include "local_defaults.h"
 
 int set_cal(int mag, char *cal_file);
 void read_loop(unsigned int sample_rate);
-void print_rpyl(mpudata_t *mpu);
+void print_rpyl(mpudata_t *mpu, int sock);
 void print_fused_euler_angles(mpudata_t *mpu);
 void print_fused_quaternion(mpudata_t *mpu);
 void print_calibrated_accel(mpudata_t *mpu);
@@ -74,7 +78,7 @@ int main(int argc, char **argv)
 	int verbose = 0;
 	char *mag_cal_file = NULL;
 	char *accel_cal_file = NULL;
-
+	
 	while ((opt = getopt(argc, argv, "b:s:y:a:m:vh")) != -1) {
 		switch (opt) {
 		case 'b':
@@ -175,10 +179,28 @@ void read_loop(unsigned int sample_rate)
 	unsigned long loop_delay;
 	mpudata_t mpu;
 
+	int sock_imu_err = 0;
+	int sock_imu =  0;
+	struct sockaddr_in server_imu;
+
 	memset(&mpu, 0, sizeof(mpudata_t));
 
 	if (sample_rate == 0)
 		return;
+
+
+	server_imu.sin_addr.s_addr = inet_addr("127.0.0.1");
+	server_imu.sin_family = AF_INET;
+	server_imu.sin_port = htons(4354);
+
+
+	// try to connect to XCSoar
+	while (connect(sock_imu, (struct sockaddr *)&server_imu, sizeof(server_imu)) < 0) {
+		fprintf(stderr, "failed to connect, trying again\n");
+		fflush(stdout);
+		sleep(1);
+	}
+
 
 	loop_delay = (1000 / sample_rate) - 2;
 
@@ -186,13 +208,9 @@ void read_loop(unsigned int sample_rate)
 
 	linux_delay_ms(loop_delay);
 
-	while (!done) {
+	while (!done && !sock_imu_err) {
 		if (mpu9150_read(&mpu) == 0) {
-			print_rpyl(&mpu);
-			// print_fused_euler_angles(&mpu);
-			// printf_fused_quaternions(&mpu);
-			// print_calibrated_accel(&mpu);
-			// print_calibrated_mag(&mpu);
+			print_rpyl(&mpu, sock_imu);
 		}
 
 		linux_delay_ms(loop_delay);
@@ -201,15 +219,7 @@ void read_loop(unsigned int sample_rate)
 	printf("\n\n");
 }
 
-void print_fused_euler_angles(mpudata_t *mpu)
-{
-	printf("\rX: %0.0f Y: %0.0f Z: %0.0f        ",
-			mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE, 
-			mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE, 
-			mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE);
 
-	fflush(stdout);
-}
 
 /**
 * output_rpyl: Output in NMEA format as
@@ -234,16 +244,44 @@ void print_fused_euler_angles(mpudata_t *mpu)
 *  14: Inconsistent pitch data between gyro and acc.
 *  15: Inconsistent yaw data between gyro and acc.
 */
-void print_rpyl(mpudata_t *mpu)
+void print_rpyl(mpudata_t *mpu, int sock)
 {
 	
-	printf("\r$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0	",
+	int sock_err;
+	char s[256];
+	
+	sprintf(s, "\r$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0	",
 	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE,
 	       		- (mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE),
 	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE);
-	fflush(stdout);
+	
+	// Send NMEA string via socket to XCSoar
+	if ((sock_err = send(sock, s, strlen(s), 0)) < 0)
+	{	
+		//fprintf(stderr, "send failed\n");
+		printf("send failed\n");
+		//break;
+	}
+	
 	
 }
+
+
+
+
+
+
+
+void print_fused_euler_angles(mpudata_t *mpu)
+{
+	printf("\rX: %0.0f Y: %0.0f Z: %0.0f        ",
+			mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE, 
+			mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE, 
+			mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE);
+
+	fflush(stdout);
+}
+
 
 void print_fused_quaternions(mpudata_t *mpu)
 {
