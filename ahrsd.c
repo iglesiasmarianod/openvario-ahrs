@@ -178,8 +178,10 @@ void read_loop(unsigned int sample_rate)
 	unsigned long loop_delay;
 	mpudata_t mpu;
 
-	int sock_imu_err = 0;
+
 	int sock_imu =  0;
+
+	int sock_imu_err = 0;
 	struct sockaddr_in server_imu;
 
 	memset(&mpu, 0, sizeof(mpudata_t));
@@ -187,10 +189,14 @@ void read_loop(unsigned int sample_rate)
 	if (sample_rate == 0)
 		return;
 
+	//open socket
+	sock_imu = socket(AF_INET, SOCK_STREAM, 0);
+	if(sock_imu == 1)
+		fprintf(stderr, "Unable to create socket");
 
 	server_imu.sin_addr.s_addr = inet_addr("127.0.0.1");
 	server_imu.sin_family = AF_INET;
-	server_imu.sin_port = htons(4354);
+	server_imu.sin_port = htons(2000);
 
 
 	// try to connect to XCSoar
@@ -200,14 +206,13 @@ void read_loop(unsigned int sample_rate)
 		sleep(1);
 	}
 
-
 	loop_delay = (1000 / sample_rate) - 2;
 
 	printf("\nEntering read loop (ctrl-c to exit)\n\n");
 
 	linux_delay_ms(loop_delay);
 
-	while (!done && !sock_imu_err) {
+	while (!done) {
 		if (mpu9150_read(&mpu) == 0) {
 			print_rpyl(&mpu, sock_imu);
 		}
@@ -249,7 +254,7 @@ void print_rpyl(mpudata_t *mpu, int sock)
 	int sock_err;
 	char s[256];
 	
-	sprintf(s, "\r$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0	",
+	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0\r\n",
 	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE,
 	       		- (mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE),
 	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE);
