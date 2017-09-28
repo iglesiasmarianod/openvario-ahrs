@@ -8,7 +8,7 @@ The majority of the code is based on the Linux-MPU9150 sample app by Pansenti. O
 
 Ultimately, once proven, the code will be combined into the OpenVario sensord and sensorcal source trees.
 
-The linux-mpu9150 code uses the InvenSense Embedded Motion Driver v5.1.1 SDK
+The code uses the InvenSense Embedded Motion Driver v5.1.1 SDK
 to obtain fused 6-axis quaternion data from the MPU-9150 DMP. The quaternion
 data is then further corrected in the linux-mpu0150 code with magnetometer 
 data collected from the IMU.
@@ -34,8 +34,8 @@ For Options (1) and (2), remember to source the environment file for the Open Em
 
 A recommendation is to create a symbolic link to the make file you want to use.
 
-        user@mydesktop:~$ cd ov-mpu9150
-        user@mydesktop:~/ov-mpu9150$ ln -s Makefile-native Makefile
+        user@mydesktop:~$ cd openvario-ahrs
+        user@mydesktop:~/openvario-ahrs$ ln -s Makefile-native Makefile
 
 After that you can just type <code>make</code> to build the code.
 
