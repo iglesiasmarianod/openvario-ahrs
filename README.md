@@ -1,4 +1,4 @@
-# OpenVario Gliding COmputer - Driver for MPU9150 as AHRS
+# OpenVario Gliding Computer - Driver for MPU9150 as AHRS
 
 A work in progress driver for the MPU9150 chip that is currently sitting unused in the [OpenVario Glide Computer](http://www.openvario.org).
 
