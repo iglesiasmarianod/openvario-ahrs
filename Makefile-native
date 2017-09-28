@@ -20,18 +20,18 @@ OBJS = inv_mpu.o \
        vector3d.o
 
 
-all : imu imucal
+all : ahrsd imucal
 
 
-imu : $(OBJS) imu.o
-	$(CC) $(CFLAGS) $(OBJS) imu.o -lm -o imu
+ahrsd : $(OBJS) ahrsd.o
+	$(CC) $(CFLAGS) $(OBJS) ahrsd.o -lm -o ahrsd
 
 imucal : $(OBJS) imucal.o
 	$(CC) $(CFLAGS) $(OBJS) imucal.o -lm -o imucal
 
 	
-imu.o : imu.c
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c imu.c
+ahrsd.o : ahrsd.c
+	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c ahrsd.c
 	
 imucal.o : imucal.c
 	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c imucal.c
@@ -58,4 +58,4 @@ clean:
 	rm -f *.o
 
 veryclean: clean
-	rm -f imu imucal
+	rm -f ahrsd imucal
