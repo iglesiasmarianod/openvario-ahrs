@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 
 	register_sig_handler();
 
-	if (mpu9150_init(i2c_bus, sample_rate, 0))
+	if (mpu9150_init(i2c_bus, sample_rate, 0, gyro_orientation))
 		exit(1);
 
 	read_loop(sample_rate);

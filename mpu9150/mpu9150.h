@@ -55,7 +55,7 @@ typedef struct {
 
 
 void mpu9150_set_debug(int on);
-int mpu9150_init(int i2c_bus, int sample_rate, int yaw_mixing_factor);
+int mpu9150_init(int i2c_bus, int sample_rate, int yaw_mixing_factor, signed char *gyro_orientation);
 void mpu9150_exit();
 int mpu9150_read(mpudata_t *mpu);
 int mpu9150_read_dmp(mpudata_t *mpu);

@@ -77,7 +77,8 @@ int main(int argc, char **argv)
 	int verbose = 0;
 	char *mag_cal_file = NULL;
 	char *accel_cal_file = NULL;
-	
+
+
 	while ((opt = getopt(argc, argv, "b:s:y:a:m:vh")) != -1) {
 		switch (opt) {
 		case 'b':
@@ -153,8 +154,9 @@ int main(int argc, char **argv)
 	register_sig_handler();
 
 	mpu9150_set_debug(verbose);
-
-	if (mpu9150_init(i2c_bus, sample_rate, yaw_mix_factor))
+	
+	
+	if (mpu9150_init(i2c_bus, sample_rate, yaw_mix_factor, gyro_orientation))
 		exit(1);
 
 	set_cal(0, accel_cal_file);
@@ -254,10 +256,11 @@ void print_rpyl(mpudata_t *mpu, int sock)
 	int sock_err;
 	char s[256];
 	
+	//  removed  RAD_TO_DEGREE conversion
 	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0\r\n",
-	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE,
-	       		- (mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE),
-	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE);
+	       		mpu->fusedEuler[VEC3_X] * 10,
+	       		- (mpu->fusedEuler[VEC3_Y] * 10),
+	       		mpu->fusedEuler[VEC3_Z] * 10);
 	
 	// Send NMEA string via socket to XCSoar
 	if ((sock_err = send(sock, s, strlen(s), 0)) < 0)
