@@ -39,27 +39,5 @@
 
 
 
-	/**
-	 * MPU is orientated with pin1 away from pressure inlets 
-	 * (i.e. away from dir of travel on x axis)
-	 * y axis is towards cinch socket, which is towards right wing in "normal" orientation
-	 * z axis is upside down in "normal" orientation, 
-	 * 
-	 * ***NOTE gyro not oriented to pin1 internally, mag & accel orientations differ ***
-	 */
-	     /*
-       XYZ  010_001_000 Identity Matrix
-       XZY  001_010_000
-       YXZ  010_000_001
-       YZX  000_010_001
-       ZXY  001_000_010
-       ZYX  000_001_010
-     */
-	signed char gyro_orientation[9] = { 1, 0, 0,
-                                        0, 1, 0,
-                                        0, 0, 1 };
-
-
-
 #endif /* LOCAL_DEFAULTS_H */
 

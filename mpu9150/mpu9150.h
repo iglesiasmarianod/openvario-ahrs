@@ -55,13 +55,14 @@ typedef struct {
 
 
 void mpu9150_set_debug(int on);
-int mpu9150_init(int i2c_bus, int sample_rate, int yaw_mixing_factor, signed char *gyro_orientation);
+int mpu9150_init(int i2c_bus, int sample_rate, int yaw_mixing_factor);
 void mpu9150_exit();
 int mpu9150_read(mpudata_t *mpu);
 int mpu9150_read_dmp(mpudata_t *mpu);
 int mpu9150_read_mag(mpudata_t *mpu);
 void mpu9150_set_accel_cal(caldata_t *cal);
 void mpu9150_set_mag_cal(caldata_t *cal);
+
 
 #endif /* MPU9150_H */
 

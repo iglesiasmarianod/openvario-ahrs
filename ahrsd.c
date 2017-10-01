@@ -10,7 +10,7 @@
  * TCP socket for XCSoar in a format compatiblewith the LevilAHRS driver..
  * 
  * Currently no attempt made to smooth output beyond what is done in the
- * Invensense driver, or to transform the result for different Oenvario orientations.
+ * Invensense driver, or to transform the result for different Openvario orientations.
  * 
  * TODO:
  * Daemonise
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
 	mpu9150_set_debug(verbose);
 	
 	
-	if (mpu9150_init(i2c_bus, sample_rate, yaw_mix_factor, gyro_orientation))
+	if (mpu9150_init(i2c_bus, sample_rate, yaw_mix_factor))
 		exit(1);
 
 	set_cal(0, accel_cal_file);
