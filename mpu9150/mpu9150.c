@@ -162,17 +162,17 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 	switch(orientation) 
 	{
 		case 1: 	
-			memcpy(gyro_orientation, gyro_orientation_1, strlen((const char *)gyro_orientation_1));	
+			memcpy(gyro_orientation, gyro_orientation_1, sizeof gyro_orientation_1);	
 			break;																		
 		case 2: 	
-			memcpy(gyro_orientation, gyro_orientation_1, strlen((const char *)gyro_orientation_2));	
+			memcpy(gyro_orientation, gyro_orientation_2, sizeof gyro_orientation_2);	
 			break;																		
 		case 3: 	
-			memcpy(gyro_orientation, gyro_orientation_1, strlen((const char *)gyro_orientation_3));		
+			memcpy(gyro_orientation, gyro_orientation_3, sizeof gyro_orientation_3);		
 			break;																	
 		case 0: 	
 		default:
-			memcpy(gyro_orientation, gyro_orientation_1, strlen((const char *)gyro_orientation_0));		
+			memcpy(gyro_orientation, gyro_orientation_0, sizeof gyro_orientation_0);		
 	}																	
 																					
 
