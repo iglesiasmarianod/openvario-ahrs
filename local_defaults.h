@@ -37,6 +37,8 @@
 
 #define DEFAULT_YAW_MIX_FACTOR 4
 
+#define SYS_CONF_FILE "/boot/config.uEnv"
+
 
 
 #endif /* LOCAL_DEFAULTS_H */

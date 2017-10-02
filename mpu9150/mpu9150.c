@@ -28,6 +28,7 @@
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
 #include "mpu9150.h"
+#include "../local_defaults.h"
 
 static int data_ready();
 static void calibrate_data(mpudata_t *mpu);
@@ -155,9 +156,50 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 											0, 1, 0 };	
 											
 	signed char gyro_orientation[9];
-	unsigned int orientation = 1;
+	int orientation, charval;
 	
-	//TODO: Get orientation from /boot/conf.uEnv (rotation=X)
+	FILE *f;
+	char *sys_conf_file = SYS_CONF_FILE;
+	char buff[10], rot[10]; 
+	short int found_orientation = 0;
+	
+	f = fopen(sys_conf_file, "r");
+	
+	if(f)
+	{
+		while(!found_orientation)
+		{
+			if (!fgets(buff, 10, f)) 
+			{
+				printf("Unable to find valid rotation directive in %s", sys_conf_file);
+				break;
+			}
+		
+			if((strcmp(buff, "rotation=") == 0) || (strcmp(buff, "rotation ") == 0))
+			{	
+				while(!found_orientation)
+				{
+					if (!fgets(rot, 2, f)) 
+						break;
+					
+					charval = atoi(rot);
+					if(((charval > 0) && (charval < 4))|| (strcmp(rot, "0") == 0)) 
+					{
+						found_orientation = 1;
+						orientation =  charval;
+						break;
+					}
+				}
+			}
+		}
+		
+		fclose(f);
+	} 
+	else
+		printf("Cannot determine orientation from system config file!");
+	
+	
+	printf("Using orientation %d", orientation);
 	
 	switch(orientation) 
 	{
