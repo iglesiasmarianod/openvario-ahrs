@@ -21,21 +21,21 @@
 //  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 //  SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifndef LOCAL_DEFAULTS_H
-#define LOCAL_DEFAULTS_H
+#ifndef AHRS_SETTINGS_H
+#define AHRS_SETTINGS_H
 
 // To avoid having to pass the same command line switches when running
 // the test apps, you can specify the defaults for your platform here.
 
 // Openvario i2c bus
-#define DEFAULT_I2C_BUS 1
+#define AHRS_I2C_BUS 1
 
 
 // platform independent
 
-#define DEFAULT_SAMPLE_RATE_HZ	10
+#define AHRS_SAMPLE_RATE_HZ	10
 
-#define DEFAULT_YAW_MIX_FACTOR 4
+#define AHRS_YAW_MIX_FACTOR 4
 
 #define SYS_CONF_FILE "/boot/config.uEnv"
 

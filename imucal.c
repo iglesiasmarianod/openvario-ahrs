@@ -35,7 +35,7 @@
 
 #include "mpu9150.h"
 #include "linux_glue.h"
-#include "local_defaults.h"
+#include "ahrs_settings.h"
 
 void read_loop(unsigned int sample_rate);
 void print_accel(mpudata_t *mpu);
@@ -69,8 +69,8 @@ void usage(char *argv_0)
 int main(int argc, char **argv)
 {
 	int opt;
-	int i2c_bus = DEFAULT_I2C_BUS;
-	int sample_rate = DEFAULT_SAMPLE_RATE_HZ;
+	int i2c_bus = AHRS_I2C_BUS;
+	int sample_rate = AHRS_SAMPLE_RATE_HZ;
 	
 	mag_mode = -1;
 
