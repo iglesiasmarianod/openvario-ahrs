@@ -42,15 +42,11 @@ After that you can just type <code>make</code> to build the code.
 The result is two executables called <code>ahrsd</code> and <code>imucal</code>.
 
 
-### ahrsd_settings.h
+### ahrs_settings.h
 
-You can modify some default parameter settings in <code>local_defaults.h</code> to avoid
-having to pass command line switches to the applications every run. 
+Settings used by ahrsd can be modified in <code>local_defaults.h</code>. 
 
 After modifying <code>local_defaults.h</code>, you will have to run <code>make</code> again. 
-
-The defaults in  <code>local_defaults.h</code> are for the RPi.
-
 
 
 # Calibration
