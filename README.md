@@ -54,10 +54,10 @@ and add the following to it:
 <code>rotation=X</code>
 
 Where X is a number 0 - 3:
-0 = Normal landscape
-1 = Portrait, rotated 90 degrees
-2 = Landscape, upside down
-3 = Portrait, rotated 270 degrees
+* 0 = Normal landscape
+* 1 = Portrait, rotated 90 degrees
+* 2 = Landscape, upside down
+* 3 = Portrait, rotated 270 degrees
 
 
 
