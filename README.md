@@ -1,4 +1,6 @@
-# OpenVario Gliding Computer - Driver for MPU9150 as AHRS
+# OpenVario Glide Computer - Driver for MPU9150 as AHRS
+John Wells
+
 
 A work in progress driver for the MPU9150 chip that is currently sitting unused in the [OpenVario Glide Computer](http://www.openvario.org).
 
@@ -63,8 +65,9 @@ Where X is a number 0 - 3:
 
 # Calibration
 
-You'll need to calibrate the accelerometer to use it. 
-Run <code>./imucal -a</a> and slowly move your openvario through all
+You'll need to calibrate the accelerometer and magnetometer before using them for the first time.
+
+First run <code>./imucal -a</code> and slowly move your openvario through all
 orientations in three dimensions. Slowly is the the key. 
 We are trying to measure gravity only and sudden movements will 
 induce unwanted accelerations.
