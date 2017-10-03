@@ -166,9 +166,9 @@ void print_rpyl(mpudata_t *mpu, int sock)
 	
 	//  removed  RAD_TO_DEGREE conversion
 	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0\r\n",
-	       		mpu->fusedEuler[VEC3_X] * 10,
-	       		- (mpu->fusedEuler[VEC3_Y] * 10),
-	       		mpu->fusedEuler[VEC3_Z] * 10);
+	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE * 10,
+	       		mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE * 10,
+	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE * 10);
 	
 	// Send NMEA string via socket to XCSoar
 	if ((sock_err = send(sock, s, strlen(s), 0)) < 0)

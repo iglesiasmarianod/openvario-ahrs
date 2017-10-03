@@ -4,21 +4,21 @@ A work in progress driver for the MPU9150 chip that is currently sitting unused 
 
 Currently, the driver aims to provide output compatible with the XCSoar LevilAHRS driver.
 
-The majority of the code is based on the Linux-MPU9150 sample app by Pansenti. Original source is unavailable, but license file is intact.
 
 Ultimately, once proven, the code will be combined into the OpenVario sensord and sensorcal source trees.
 
-The code uses the InvenSense Embedded Motion Driver v5.1.1 SDK
-to obtain fused 6-axis quaternion data from the MPU-9150 DMP. The quaternion
-data is then further corrected in the linux-mpu0150 code with magnetometer 
-data collected from the IMU.
 
 
-# Fetch
+# Getting the driver
 
-Use git to fetch the code. Clone this repository.
+You can either compile the code yourself, or just install a pre-built binary.
 
-# Build
+To compile yourself, use git to fetch the code. Clone this repository. Then jump to "Compiling the driver" below.
+
+To install a pre-built binary, grab [ahrsd](http://glidist.jfwhome.com/ahrsd) and [imucal](http://glidist.jfwhome.com/imucal) and jump to "Installation" below.
+
+
+# Compiling the driver
 
 There will be three ways to compile and test the driver.
 
@@ -42,56 +42,32 @@ After that you can just type <code>make</code> to build the code.
 The result is two executables called <code>ahrsd</code> and <code>imucal</code>.
 
 
-### ahrs_settings.h
+# Installation
 
-Settings used by ahrsd can be modified in <code>local_defaults.h</code>. 
+Copy ahrs and imucal anywhere on your OpenVario for testing. For example, for now, /home/root is fine.
 
-After modifying <code>local_defaults.h</code>, you will have to run <code>make</code> again. 
+The programs need to know the installed orientation of your openvario in your panel. 
+
+They get this by reading the <code>/boot/config.uEnv</code> file. If you don't have one, create it,
+and add the following to it:
+
+<code>rotation=X</code>
+
+Where X is a number 0 - 3:
+0 = Normal landscape
+1 = Portrait, rotated 90 degrees
+2 = Landscape, upside down
+3 = Portrait, rotated 270 degrees
+
 
 
 # Calibration
 
-The IMU gyros have a built in calibration mechanism, but the accelerometers
-and the magnetometer require manual calibration.
-
-Calibration, particularly magnetometer calibrations, is a complicated topic.
-We've provided a simple utility application called <code>imucal</code> that can get you
-started.
-
-        root@openvario:~/# ./imucal -h
-         
-        Usage: ./imucal <-a | -m> [options]
-          -b <i2c-bus>          The I2C bus number where the IMU is. The default is 1 for /dev/i2c-1.
-          -s <sample-rate>      The IMU sample rate in Hz. Range 2-50, default 10.
-          -a                    Accelerometer calibration
-          -m                    Magnetometer calibration
-                                Accel and mag modes are mutually exclusive, but one must be chosen.
-          -f <cal-file>         Where to save the calibration file. Default ./<mode>cal.txt
-          -h                    Show this help
-        
-        Example: ./imucal -b3 -s20 -a
-
-You'll need to run this utility twice, once for the accelerometers and
-again for the magnetometer.
-
-Here is how to generate accelerometer calibration data on an RPi. 
-The default bus and sample rate are used.
-
-         root@openvario:~/# ./imucal -a
-        
-        Initializing IMU .......... done
-        
-        
-        Entering read loop (ctrl-c to exit)
-        
-        X -16368|16858|16858    Y -16722|-2490|16644    Z -17362|-562|17524             ^C
-
-
-The numbers shown are min|current|max for each of the axes.
-
-What you want to do is slowly move the RPi/imu through all orientations in
-three dimensions. Slow is the the key. We are trying to measure gravity only
-and sudden movements will induce unwanted accelerations.
+You'll need to calibrate the accelerometer to use it. 
+Run <code>./imucal -a</a> and slowly move your openvario through all
+orientations in three dimensions. Slowly is the the key. 
+We are trying to measure gravity only and sudden movements will 
+induce unwanted accelerations.
 
 The values will update whenever there is a change in one of the min/max
 values, so when you see no more changes you can enter ctrl-c to exit
@@ -100,57 +76,36 @@ the program.
 When it finishes, the program will create an <code>accelcal.txt</code> file
 recording the min/max values.
 
-        root@openvario:~/# cat accelcal.txt 
-        -16368
-        16858
-        -16722
-        16644
-        -17362
-        17524
-
-
-Do the same thing for the magnetometers running <code>imucal</code> with the -m switch.
-
-        root@openvario:~/# ./imucal -m
-        
-        Initializing IMU .......... done
-        
-        
-        Entering read loop (ctrl-c to exit)
-        
-        X -179|-54|121    Y -154|199|199    Z -331|-124|15             ^C
-
-
-Again move the device through different orientations in all three dimensions
-until you stop seeing changes. You can move faster during this calibration
-since we aren't looking at accelerations.
-
-After ending the program with ctrl-c, a calibration file called <code>magcal.txt</code>
+Do the same for the magnetometer by running <code>imucal -m</code>. After ending the program with ctrl-c, 
+a calibration file called <code>magcal.txt</code>
 will be written.
 
-        root@openvario:~/# cat magcal.txt 
-        -179
-        121
-        -154
-        199
-        -331
-        15
-
-
-If these two files, <code>accelcal.txt</code> and <code>magcal.txt</code>, are left in the
-same directory as the <code>imu</code> program, they will be used by default.
+Leave the two calibration files, <code>accelcal.txt</code> and <code>magcal.txt</code>, in the
+same directory as the <code>ahrsd</code> program, they will be used by default.
 
 
 # Run
 
-The <code>ahrsd</code> application is intended to be run as a daemon. Currently you will have to run it under a separate console (e.g. via SSH) while OpenVario is in the foreground.
+For now you have to run ahrsd manually. Exit to the shell and run <code>nohup ./ahrsd &</code>, 
+then restart XCSoar with <code>/opt/bin/ovmenu-ng.sh</code>. 
+Alternatively, you might find it easiest to run it under a separate console (e.g. via SSH) 
+while XCSoar is in the foreground.
 
 <code>./ahrsd</code>
 
-ahrs.d will pick up the two calibration files automatically.
+In XCSoar, add a new device: 
+Port = TCP Port
+TCP Port = 2000
+Driver = Levil AHRS
 
-----
 
-All of the functions in the Invensense SDK under the <code>eMPL</code> directory
-are available. See <code>mpu9150/mpu9150.c</code> for some examples.
+# Copyright
+
+The majority of the code is based on the Linux-MPU9150 sample app by Pansenti. 
+Original source is unavailable, but license file is intact.
+
+The code uses the InvenSense Embedded Motion Driver v5.1.1 SDK
+to obtain fused 6-axis quaternion data from the MPU-9150 DMP. The quaternion
+data is then further corrected in the linux-mpu0150 code with magnetometer 
+data collected from the IMU.
 

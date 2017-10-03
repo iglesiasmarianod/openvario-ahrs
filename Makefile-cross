@@ -46,10 +46,10 @@ imucal : $(OBJS) imucal.o
 	$(CC) $(CFLAGS) $(OBJS) imucal.o -lm -o imucal
 
 	
-ahrsd.o : ahrsd.c local_defaults.h
+ahrsd.o : ahrsd.c ahrs_settings.h
 	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c ahrsd.c
 	
-imucal.o : imucal.c local_defaults.h
+imucal.o : imucal.c ahrs_settings.h
 	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c imucal.c
 
 mpu9150.o : $(MPUDIR)/mpu9150.c
