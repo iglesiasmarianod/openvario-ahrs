@@ -63,6 +63,8 @@ int mpu9150_read_mag(mpudata_t *mpu);
 void mpu9150_set_accel_cal(caldata_t *cal);
 void mpu9150_set_mag_cal(caldata_t *cal);
 
+int set_orientation(signed char gyro_orientation[9]);
+
 
 #endif /* MPU9150_H */
 

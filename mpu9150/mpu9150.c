@@ -55,170 +55,11 @@ void mpu9150_set_debug(int on)
 
 int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 {
-
-
-/**
- * MPU is orientated with pin1 away from pressure inlets 
- * (i.e. away from dir of travel on x axis)
- * y axis is towards cinch socket, which is towards right wing in "normal" orientation
- * z axis is upside down in "normal" orientation, 
- * 
- * -------
- * |     x|
- * |      |
- * |______|
- * 
- * 
- * Gyro
- * -----
- * In above orientation:
- * X-axis = BACKWD
- * Y-axis = Right
- * z-axis = UP
- * 
- * ==> in installed orientation, normal landscape:
- * X = FWD
- * Y = RH Wing
- * Z = DOWN
-			{ 1, 0, 0,
-			  0, 1, 0, 
-			  0, 0,-1 };
- * 
- * ==> portrait clockwise:
- * X = FWD
- * Y = DOWN
- * Z = LH Wing
-			{ 1, 0, 0,
-			  0, 0,-1, 
-			  0,-1, 0 };	  
- * 
- * ==> landscape upside down:
- * X = FWD
- * Y = LH Wing
- * Z = UP
-			{ 1, 0, 0,
-			  0,-1, 0, 
-			  0, 0, 1 };	  
- *
- * ==> Portrait anticlockwise:
- * X = FWD
- * Y = UP
- * Z = RH Wing
-			{ 1, 0, 0,
-			  0, 0, 1, 
-			  0, 1, 0 };
- * 
- * Magnetometer
- * -------------
- * 
- * In above orientation:
- * X = Right
- * Y = Backward
- * Z = Down
- * 
- * ==> in installed orientation, landscape:
- * X = Right Wing
- * Y = Fwd
- * Z = Up
- * 
- * ==> Portrait clockwise
- * X = Down
- * Y = Fwd
- * Z = Right Wing
- * 
- * ==> Upside down landscape:
- * X = Left Wing
- * Y = Fwd
- * Z = Down
- * 
- * ==> Portrait anticlockwise:
- * X = Up
- * Y = Fwd
- * Z = Left Wing
- * 
- */
-
-	// normal landscape
-	signed char gyro_orientation_0[9]	= { 1, 0, 0,
-											0, 1, 0,
-											0, 0,-1 };
-	// portrait 90deg	
-	signed char gyro_orientation_1[9]	= { 1, 0, 0,
-											0, 0,-1, 
-											0,-1, 0 };
-	// landscape 180deg	
-	signed char gyro_orientation_2[9]	= { 1, 0, 0,
-											0,-1, 0, 
-											0, 0, 1 };
-	// portrait 270deg
-	signed char gyro_orientation_3[9]	= { 1, 0, 0,
-											0, 0, 1, 
-											0, 1, 0 };	
 											
 	signed char gyro_orientation[9];
-	int orientation, charval;
+																
+	set_orientation(gyro_orientation);		
 	
-	FILE *f;
-	char *sys_conf_file = SYS_CONF_FILE;
-	char buff[10], rot[10]; 
-	short int found_orientation = 0;
-	
-	f = fopen(sys_conf_file, "r");
-	
-	if(f)
-	{
-		while(!found_orientation)
-		{
-			if (!fgets(buff, 10, f)) 
-			{
-				printf("Unable to find valid rotation directive in %s", sys_conf_file);
-				break;
-			}
-		
-			if((strstr(buff, "rotation=") != NULL) || (strstr(buff, "rotation ") != NULL))
-			{	
-				while(!found_orientation)
-				{
-					if (!fgets(rot, 2, f)) 
-						break;
-					
-					charval = atoi(rot);
-					if(((charval > 0) && (charval < 4))|| (strcmp(rot, "0") == 0)) 
-					{
-						found_orientation = 1;
-						orientation =  charval;
-						break;
-					}
-				}
-				
-			}
-		} 
-		
-		fclose(f);
-	} 
-	else
-		printf("Cannot determine orientation from system config file!");
-	
-	
-	printf("Using orientation %d", orientation);
-	
-	switch(orientation) 
-	{
-		case 1: 	
-			memcpy(gyro_orientation, gyro_orientation_1, sizeof gyro_orientation_1);	
-			break;																		
-		case 2: 	
-			memcpy(gyro_orientation, gyro_orientation_2, sizeof gyro_orientation_2);	
-			break;																		
-		case 3: 	
-			memcpy(gyro_orientation, gyro_orientation_3, sizeof gyro_orientation_3);		
-			break;																	
-		case 0: 	
-		default:
-			memcpy(gyro_orientation, gyro_orientation_0, sizeof gyro_orientation_0);		
-	}																	
-																					
-
 	if (i2c_bus < 0 || i2c_bus > 3)
 		return -1;
 
@@ -620,4 +461,178 @@ unsigned short inv_orientation_matrix_to_scalar(signed char *mtx)
     scalar |= inv_row_2_scale(mtx + 3) << 3;
     scalar |= inv_row_2_scale(mtx + 6) << 6;
     return scalar;
+}
+
+
+
+
+/**
+ * MPU is orientated with pin1 away from pressure inlets 
+ * (i.e. away from dir of travel on x axis)
+ * y axis is towards cinch socket, which is towards right wing in "normal" orientation
+ * z axis is upside down in "normal" orientation, 
+ * 
+ * -------
+ * |     x|
+ * |      |
+ * |______|
+ * 
+ * 
+ * Gyro
+ * -----
+ * In above orientation:
+ * X-axis = BACKWD
+ * Y-axis = Right
+ * z-axis = UP
+ * 
+ * ==> in installed orientation, normal landscape:
+ * X = FWD
+ * Y = RH Wing
+ * Z = DOWN
+			{ 1, 0, 0,
+			  0, 1, 0, 
+			  0, 0,-1 };
+ * 
+ * ==> portrait clockwise:
+ * X = FWD
+ * Y = DOWN
+ * Z = LH Wing
+			{ 1, 0, 0,
+			  0, 0,-1, 
+			  0,-1, 0 };	  
+ * 
+ * ==> landscape upside down:
+ * X = FWD
+ * Y = LH Wing
+ * Z = UP
+			{ 1, 0, 0,
+			  0,-1, 0, 
+			  0, 0, 1 };	  
+ *
+ * ==> Portrait anticlockwise:
+ * X = FWD
+ * Y = UP
+ * Z = RH Wing
+			{ 1, 0, 0,
+			  0, 0, 1, 
+			  0, 1, 0 };
+ * 
+ * Magnetometer
+ * -------------
+ * 
+ * In above orientation:
+ * X = Right
+ * Y = Backward
+ * Z = Down
+ * 
+ * ==> in installed orientation, landscape:
+ * X = Right Wing
+ * Y = Fwd
+ * Z = Up
+ * 
+ * ==> Portrait clockwise
+ * X = Down
+ * Y = Fwd
+ * Z = Right Wing
+ * 
+ * ==> Upside down landscape:
+ * X = Left Wing
+ * Y = Fwd
+ * Z = Down
+ * 
+ * ==> Portrait anticlockwise:
+ * X = Up
+ * Y = Fwd
+ * Z = Left Wing
+ * 
+ */
+
+
+
+int set_orientation(signed char gyro_orientation[9])
+{
+	
+	// normal landscape
+	signed char gyro_orientation_0[9]	= { 1, 0, 0,
+											0, 1, 0,
+											0, 0,-1 };
+	// portrait 90deg	
+	signed char gyro_orientation_1[9]	= { 1, 0, 0,
+											0, 0,-1, 
+											0,-1, 0 };
+	// landscape 180deg	
+	signed char gyro_orientation_2[9]	= { 1, 0, 0,
+											0,-1, 0, 
+											0, 0, 1 };
+	// portrait 270deg
+	signed char gyro_orientation_3[9]	= { 1, 0, 0,
+											0, 0, 1, 
+											0, 1, 0 };	
+											
+	//signed char gyro_orientation[9];
+	int orientation, charval;
+	
+	FILE *f;
+	char *sys_conf_file = SYS_CONF_FILE;
+	char buff[10], rot[10]; 
+	short int found_orientation = 0;
+	
+	f = fopen(sys_conf_file, "r");
+	
+	if(f)
+	{
+		while(!found_orientation)
+		{
+			if (!fgets(buff, 10, f)) 
+			{
+				printf("Unable to find valid rotation directive in %s", sys_conf_file);
+				break;
+			}
+		
+			if((strstr(buff, "rotation=") != NULL) || (strstr(buff, "rotation ") != NULL))
+			{	
+				while(!found_orientation)
+				{
+					if (!fgets(rot, 2, f)) 
+						break;
+					
+					charval = atoi(rot);
+					if(((charval > 0) && (charval < 4))|| (strcmp(rot, "0") == 0)) 
+					{
+						found_orientation = 1;
+						orientation =  charval;
+						break;
+					}
+				}
+				
+			}
+		} 
+		
+		fclose(f);
+	} 
+	else
+		printf("Cannot determine orientation from system config file!");
+	
+	
+	printf("Using orientation %d", orientation);
+	
+	switch(orientation) 
+	{
+		case 1: 	
+			memcpy(gyro_orientation, gyro_orientation_1, sizeof gyro_orientation_1);
+			break;																		
+		case 2: 	
+			memcpy(gyro_orientation, gyro_orientation_2, sizeof gyro_orientation_2);
+			break;																		
+		case 3: 	
+			memcpy(gyro_orientation, gyro_orientation_3, sizeof gyro_orientation_3);	
+			break;																	
+		case 0: 	
+		default:
+			orientation = 0;
+			memcpy(gyro_orientation, gyro_orientation_0, sizeof gyro_orientation_0);	
+	}																	
+
+	return orientation;
+	
 }
