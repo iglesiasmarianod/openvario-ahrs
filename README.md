@@ -101,6 +101,8 @@ Port = TCP Port
 TCP Port = 2000
 Driver = Levil AHRS
 
+You'll also need to add an AHRS screen to your XCSoar screen/layout profile.
+
 
 # Copyright
 
