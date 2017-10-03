@@ -175,7 +175,7 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 				break;
 			}
 		
-			if((strcmp(buff, "rotation=") == 0) || (strcmp(buff, "rotation ") == 0))
+			if((strstr(buff, "rotation=") != NULL) || (strstr(buff, "rotation ") != NULL))
 			{	
 				while(!found_orientation)
 				{
@@ -190,8 +190,9 @@ int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
 						break;
 					}
 				}
+				
 			}
-		}
+		} 
 		
 		fclose(f);
 	} 
