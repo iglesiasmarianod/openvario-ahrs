@@ -25,9 +25,9 @@ CFLAGS = -Wall -mfloat-abi=hard -mfpu=vfp -fsingle-precision-constant -B$(LIBDIR
 # add -DI2C_DEBUG for debugging
 DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY -I${INCDIR} -L${LIBDIR}
 
-EMPLDIR = eMPL
-GLUEDIR = glue
 MPUDIR = mpu9150
+EMPLDIR = ${MPUDIR}/eMPL
+GLUEDIR = ${MPUDIR}/glue
 
 OBJS = inv_mpu.o \
        inv_mpu_dmp_motion_driver.o \

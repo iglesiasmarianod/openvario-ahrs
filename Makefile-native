@@ -8,9 +8,9 @@ CFLAGS = -Wall
 # add -DI2C_DEBUG for debugging
 DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY
 
-EMPLDIR = eMPL
-GLUEDIR = glue
 MPUDIR = mpu9150
+EMPLDIR = ${MPUDIR}/eMPL
+GLUEDIR = ${MPUDIR}/glue
 
 OBJS = inv_mpu.o \
        inv_mpu_dmp_motion_driver.o \
@@ -18,7 +18,6 @@ OBJS = inv_mpu.o \
        mpu9150.o \
        quaternion.o \
        vector3d.o
-
 
 all : ahrsd imucal
 

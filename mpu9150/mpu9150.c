@@ -28,7 +28,7 @@
 #include "inv_mpu.h"
 #include "inv_mpu_dmp_motion_driver.h"
 #include "mpu9150.h"
-#include "../local_defaults.h"
+#include "../ahrs_settings.h"
 
 static int data_ready();
 static void calibrate_data(mpudata_t *mpu);
