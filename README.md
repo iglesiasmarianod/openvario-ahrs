@@ -42,7 +42,7 @@ After that you can just type <code>make</code> to build the code.
 The result is two executables called <code>ahrsd</code> and <code>imucal</code>.
 
 
-### local_defaults.h
+### ahrsd_settings.h
 
 You can modify some default parameter settings in <code>local_defaults.h</code> to avoid
 having to pass command line switches to the applications every run. 
@@ -149,8 +149,9 @@ same directory as the <code>imu</code> program, they will be used by default.
 
 The <code>ahrsd</code> application is intended to be run as a daemon. Currently you will have to run it under a separate console (e.g. via SSH) while OpenVario is in the foreground.
 
-The defaults will work for the OpenVario with the two calibration files picked
-up automatically, but you can see the available options with <code>ahrsd -h</code>
+<code>./ahrsd</code>
+
+ahrs.d will pick up the two calibration files automatically.
 
 ----
 
