@@ -23,6 +23,10 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+
+#include "mpu9150.h"
+#include "linux_glue.h"
+#include "../ahrs_settings.h"
 	
 int g_debug=0;
 FILE *fp_console=NULL;
@@ -73,15 +77,85 @@ int calibrate_ams5915(t_eeprom_data* data)
 
 int calibrate_mpu9150(t_eeprom_data* data)
 {
-	//temp scaffold 
-	//TODO calibration here
+	int i2c_bus = AHRS_I2C_BUS;
+	int sample_rate = AHRS_SAMPLE_RATE_HZ;
+	int i;
+	unsigned long loop_delay;
+	mpudata_t mpu;
+	short minVal[3], change;
+	short maxVal[3];
 	
-	data->accel_xmin 	= -18000;
-	data->accel_xmax 	=  18000;
-	data->accel_ymin	= -18000;
-	data->accel_ymax	=  18000;
-	data->accel_zmin	= -18000;
-	data->accel_zmax	=  18000;
+	if (sample_rate == 0)
+		return 1;
+		
+	if (mpu9150_init(i2c_bus, sample_rate, 0))
+	{
+		printf("Failed to connect to mpu9150\n");
+		return 1;
+	}
+
+	memset(&mpu, 0, sizeof(mpudata_t));
+
+	for (i = 0; i < 3; i++) {
+		minVal[i] = 0x7fff;
+		maxVal[i] = 0x8000;
+	}
+
+	loop_delay = (1000 / sample_rate) - 2;
+
+	printf("Accelerometer calibration\n");
+	printf("==========================\n");
+	printf("The calibration routine will require you to turn your OpenVario through 360 degrees in three dimensions!\n");
+	printf("If you cannot do this, press 'ESC' to cancel now. Once the calibration begins, itmust be completed.\n");
+	printf("Press any key to continue, or 'ESC' to cancel\n");
+	// TODO prompt
+	
+	printf("\nRotate your OpenVario gently 360 degrees in three dimensions. Keep turning until you can no longer increase the displayed numbers. When done, press 'ESC'.\n\n");
+
+	linux_delay_ms(loop_delay);
+	
+	//todo: add loop w/ key interrupt
+	while (0) {
+		change = 0;
+
+		if (mpu9150_read_dmp(&mpu) == 0) {
+			for (i = 0; i < 3; i++) {
+				if (mpu.rawAccel[i] < minVal[i]) {
+					minVal[i] = mpu.rawAccel[i];
+					change = 1;
+				}
+				if (mpu.rawAccel[i] > maxVal[i]) {
+					maxVal[i] = mpu.rawAccel[i];
+					change = 1;
+				}
+			}
+		}
+	
+		if (change) {
+			
+			data->accel_xmin 	= minVal[0];
+			data->accel_xmax 	= maxVal[0];
+			data->accel_ymin	= minVal[1];
+			data->accel_ymax	= maxVal[1];
+			data->accel_zmin	= minVal[2];
+			data->accel_zmax	= maxVal[2];
+			
+			
+			printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
+			minVal[0], mpu.rawAccel[0], maxVal[0], 
+			minVal[1], mpu.rawAccel[1], maxVal[1],
+			minVal[2], mpu.rawAccel[2], maxVal[2]);
+
+			fflush(stdout);
+		}
+
+		linux_delay_ms(loop_delay);
+	}
+
+	printf("\n\n");
+
+	
+
 	data->mag_xmin		= -250;
 	data->mag_xmax		=  250;	
 	data->mag_ymin		= -250;
@@ -89,8 +163,12 @@ int calibrate_mpu9150(t_eeprom_data* data)
 	data->mag_zmin		= -250;
 	data->mag_zmax		=  250;
 	
+	
+	mpu9150_exit();
+	
 	return(0);
 }
+
 
 int main (int argc, char **argv) {
 	
