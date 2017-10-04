@@ -28,6 +28,7 @@ DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY -I${INCDIR} -L${LIBDIR}
 MPUDIR = mpu9150
 EMPLDIR = ${MPUDIR}/eMPL
 GLUEDIR = ${MPUDIR}/glue
+SENSORCALDIR = sensord-deps
 
 OBJS = inv_mpu.o \
        inv_mpu_dmp_motion_driver.o \
@@ -35,8 +36,10 @@ OBJS = inv_mpu.o \
        mpu9150.o \
        quaternion.o \
        vector3d.o
+       
+OBJS_SENSORCAL = $(OBJS) 24c16.o ams5915.o
 
-all : ahrsd imucal
+all : ahrsd imucal sensorcal
 
 
 ahrsd : $(OBJS) ahrsd.o
@@ -44,6 +47,9 @@ ahrsd : $(OBJS) ahrsd.o
 
 imucal : $(OBJS) imucal.o
 	$(CC) $(CFLAGS) $(OBJS) imucal.o -lm -o imucal
+	
+sensorcal : $(OBJS_SENSORCAL) sensorcal.o
+	$(CC) $(CFLAGS) $(OBJS_SENSORCAL) sensorcal.o -lrt -lm -o sensorcal
 
 	
 ahrsd.o : ahrsd.c ahrs_settings.h
@@ -51,6 +57,19 @@ ahrsd.o : ahrsd.c ahrs_settings.h
 	
 imucal.o : imucal.c ahrs_settings.h
 	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c imucal.c
+	
+
+## --------- TEMP SCAFFOLD -----------------
+sensorcal.o: $(SENSORCALDIR)/sensorcal.c $(SENSORCALDIR)/def.h
+	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(SENSORCALDIR)/sensorcal.c
+
+24c16.o : $(SENSORCALDIR)/24c16.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/24c16.c
+	
+ams5915.o : $(SENSORCALDIR)/ams5915.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/ams5915.c
+	
+## --------- END TEMP SCAFFOLD
 
 mpu9150.o : $(MPUDIR)/mpu9150.c
 	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -c $(MPUDIR)/mpu9150.c
