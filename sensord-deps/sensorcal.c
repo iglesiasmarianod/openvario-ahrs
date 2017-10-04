@@ -71,6 +71,27 @@ int calibrate_ams5915(t_eeprom_data* data)
 	return(0);
 }
 
+int calibrate_mpu9150(t_eeprom_data* data)
+{
+	//temp scaffold 
+	//TODO calibration here
+	
+	data->accel_xmin 	= -18000;
+	data->accel_xmax 	=  18000;
+	data->accel_ymin	= -18000;
+	data->accel_ymax	=  18000;
+	data->accel_zmin	= -18000;
+	data->accel_zmax	=  18000;
+	data->mag_xmin		= -250;
+	data->mag_xmax		=  250;	
+	data->mag_ymin		= -250;
+	data->mag_ymax		=  250;
+	data->mag_zmin		= -250;
+	data->mag_zmax		=  250;
+	
+	return(0);
+}
+
 int main (int argc, char **argv) {
 	
 	// local variables
@@ -83,7 +104,7 @@ int main (int argc, char **argv) {
 	int i;
 	char zero[1]={0x00};
 	
-	
+
 	// usage message
 	const char* Usage = "\n"\
 	"  -c              calibrate sensors\n"\
@@ -125,7 +146,20 @@ int main (int argc, char **argv) {
 				strcpy(data.header, "OV");
 				data.data_version = EEPROM_DATA_VERSION;
 				strcpy(data.serial, "000000");
-				data.zero_offset=0.0;
+				data.zero_offset	=  0.0;
+				data.accel_xmin 	= -18000;
+				data.accel_xmax 	=  18000;
+				data.accel_ymin		= -18000;
+				data.accel_ymax		=  18000;
+				data.accel_zmin		= -18000;
+				data.accel_zmax		=  18000;
+				data.mag_xmin		= -250;
+				data.mag_xmax		=  250;	
+				data.mag_ymin		= -250;
+				data.mag_ymax		=  250;
+				data.mag_zmin		= -250;
+				data.mag_zmax		=  250;
+				
 				update_checksum(&data);
 				printf("Writing data to EEPROM ...\n");
 				result = eeprom_write(&eeprom, (char*)&data, 0x00, sizeof(data));
@@ -137,7 +171,29 @@ int main (int argc, char **argv) {
 				if( eeprom_read_data(&eeprom, &data) == 0)
 				{
 					calibrate_ams5915(&data);
-					printf("New Offset: %f\n",(data.zero_offset));
+					
+					calibrate_mpu9150(&data);
+					
+					printf("New pressure offset: %f\n",(data.zero_offset));
+					
+					printf("New accel min X:\t%d\n", data.accel_xmin);
+					printf("New accel max X:\t%d\n", data.accel_xmax);
+					printf("New accel min Y:\t%d\n", data.accel_ymin);
+					printf("New accel max Y:\t%d\n", data.accel_ymax);
+					printf("New accel min Z:\t%d\n", data.accel_zmin);
+					printf("New accel max Z:\t%d\n", data.accel_zmax);
+					printf("New mag min X:\t%d\n", data.mag_xmin);
+					printf("New mag max X:\t%d\n", data.mag_xmax);
+					printf("New mag min Y:\t%d\n", data.mag_ymin);
+					printf("New mag max Y:\t%d\n", data.mag_ymax);
+					printf("New mag min Z:\t%d\n", data.mag_zmin);
+					printf("New mag max Z:\t%d\n", data.mag_zmax);	
+					
+					// update EEPROM to latest data version
+					data.data_version = EEPROM_DATA_VERSION;				
+					
+					
+					
 					update_checksum(&data);
 					printf("Writing data to EEPROM ...\n");
 					result = eeprom_write(&eeprom, (char*)&data, 0x00, sizeof(data));
@@ -171,6 +227,29 @@ int main (int argc, char **argv) {
 					printf("---------------------\n");
 					printf("Serial: \t\t\t%s\n", data.serial);
 					printf("Differential pressure offset:\t%f\n",data.zero_offset);
+					switch(data.data_version)
+					{
+						case 1:
+							printf("*** No IMU values stored. Please re-calibrate ***\n");
+							break;
+						case 2:
+						case 0:
+						default:
+							printf("IMU accelerometer min X:\t%d\n", data.accel_xmin);
+							printf("IMU accelerometer max X:\t%d\n", data.accel_xmax);
+							printf("IMU accelerometer min Y:\t%d\n", data.accel_ymin);
+							printf("IMU accelerometer max Y:\t%d\n", data.accel_ymax);
+							printf("IMU accelerometer min Z:\t%d\n", data.accel_zmin);
+							printf("IMU accelerometer max Z:\t%d\n", data.accel_zmax);
+							printf("IMU magnetometer min X:\t%d\n", data.mag_xmin);
+							printf("IMU magnetometer max X:\t%d\n", data.mag_xmax);
+							printf("IMU magnetometer min Y:\t%d\n", data.mag_ymin);
+							printf("IMU magnetometer max Y:\t%d\n", data.mag_ymax);
+							printf("IMU magnetometer min Z:\t%d\n", data.mag_zmin);
+							printf("IMU magnetometer max Z:\t%d\n", data.mag_zmax);
+							break;
+					}
+						
 				}
 				else
 				{
@@ -217,7 +296,7 @@ int main (int argc, char **argv) {
 				break;
 				
 			case '?':
-				printf("Unknow option %c\n", optopt);
+				printf("Unknown option %c\n", optopt);
 				printf("Usage: sensorcal [OPTION]\n%s",Usage);
 				printf("Exiting ...\n");
 		}

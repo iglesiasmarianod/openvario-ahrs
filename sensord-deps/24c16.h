@@ -1,6 +1,7 @@
 #define EEPROM_ADR 0x50
 
-#define EEPROM_DATA_VERSION 1
+// version 1 contained only ams5915 zero_offset
+#define EEPROM_DATA_VERSION 2
 
 // define struct for MS5611 sensor
 typedef struct {
@@ -13,6 +14,19 @@ typedef struct {
 	char data_version;
 	char serial[6];
 	float zero_offset;
+	// added in v2:
+	signed int accel_xmin;
+	signed int accel_xmax;
+	signed int accel_ymin;
+	signed int accel_ymax;
+	signed int accel_zmin;
+	signed int accel_zmax;
+	signed int mag_xmin;
+	signed int mag_xmax;
+	signed int mag_ymin;
+	signed int mag_ymax;
+	signed int mag_zmin;
+	signed int mag_zmax;
 	char checksum;
 } t_eeprom_data;
 
