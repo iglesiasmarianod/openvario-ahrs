@@ -97,9 +97,9 @@ while XCSoar is in the foreground.
 <code>./ahrsd</code>
 
 In XCSoar, add a new device: 
-Port = TCP Port
-TCP Port = 2000
-Driver = Levil AHRS
+* Port = TCP Port
+* TCP Port = 2000
+* Driver = Levil AHRS
 
 You'll also need to add an AHRS screen to your XCSoar screen/layout profile.
 
