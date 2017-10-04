@@ -554,12 +554,12 @@ int set_orientation(signed char gyro_orientation[9])
 	
 	// normal landscape
 	signed char gyro_orientation_0[9]	= { 1, 0, 0,
-						    0, -1, 0,
-						    0, 0,-1 };
+						    0,-1, 0,
+						    0, 0, -1 };
 	// portrait 90deg	
 	signed char gyro_orientation_1[9]	= { 1, 0, 0,
 						    0, 0, 1, 
-						    0,-1, 0 };
+						    0, -1, 0 };
 	// landscape 180deg	
 	signed char gyro_orientation_2[9]	= { 1, 0, 0,
 						    0, 1, 0, 
