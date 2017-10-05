@@ -30,6 +30,7 @@
 #include <termios.h>
 #include <assert.h>
 
+#include <fcntl.h>
 
 
 	
@@ -80,7 +81,7 @@ int calibrate_ams5915(t_eeprom_data* data)
 	return(0);
 }
 
-int calibrate_mpu9150(t_eeprom_data* data)
+int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 {
 	int i2c_bus = AHRS_I2C_BUS;
 	int sample_rate = AHRS_SAMPLE_RATE_HZ;
@@ -89,6 +90,8 @@ int calibrate_mpu9150(t_eeprom_data* data)
 	mpudata_t mpu;
 	short minVal[3], change;
 	short maxVal[3];
+	int k;
+	int done = 0;
 	
 	if (sample_rate == 0)
 		return 1;
@@ -101,7 +104,8 @@ int calibrate_mpu9150(t_eeprom_data* data)
 */
 	memset(&mpu, 0, sizeof(mpudata_t));
 
-	for (i = 0; i < 3; i++) {
+	for (i = 0; i < 3; i++) 
+	{
 		minVal[i] = 0x7fff;
 		maxVal[i] = 0x8000;
 	}
@@ -109,60 +113,76 @@ int calibrate_mpu9150(t_eeprom_data* data)
 	loop_delay = (1000 / sample_rate) - 2;
 
 	
-	printf("\nRotate your OpenVario gently 360 degrees in three dimensions. Keep turning until you can no longer increase the displayed numbers. When done, press 'ESC'.\n\n");
+	printf("\nRotate your OpenVario gently 360 degrees in three dimensions. Keep turning until you can no longer increase the displayed numbers. When done, press any key.\n\n");
 
 	linux_delay_ms(loop_delay);
 	
-	//todo: add loop w/ key interrupt
-	while (0) {
+	while (!done) {
+		if(get_keypress_nonblocking()) {
+			k = getchar();
+			done = 1;
+		}
+			
 		change = 0;
-
-		if (mpu9150_read_dmp(&mpu) == 0) {
-			for (i = 0; i < 3; i++) {
-				if (mpu.rawAccel[i] < minVal[i]) {
-					minVal[i] = mpu.rawAccel[i];
-					change = 1;
+		if(mag) {
+			if (mpu9150_read_mag(&mpu) == 0) {
+				for (i = 0; i < 3; i++) {
+					if (mpu.rawMag[i] < minVal[i]) {
+						minVal[i] = mpu.rawMag[i];
+						change = 1;
+					}
+				
+					if (mpu.rawMag[i] > maxVal[i]) {
+						maxVal[i] = mpu.rawMag[i];
+						change = 1;
+					}
 				}
-				if (mpu.rawAccel[i] > maxVal[i]) {
-					maxVal[i] = mpu.rawAccel[i];
-					change = 1;
+			}
+		} else {
+			if (mpu9150_read_dmp(&mpu) == 0) {
+				for (i = 0; i < 3; i++) {
+					if (mpu.rawAccel[i] < minVal[i]) {
+						minVal[i] = mpu.rawAccel[i];
+						change = 1;
+					}
+					if (mpu.rawAccel[i] > maxVal[i]) {
+						maxVal[i] = mpu.rawAccel[i];
+						change = 1;
+					}
 				}
 			}
 		}
 	
 		if (change) {
 			
-			data->accel_xmin 	= minVal[0];
-			data->accel_xmax 	= maxVal[0];
-			data->accel_ymin	= minVal[1];
-			data->accel_ymax	= maxVal[1];
-			data->accel_zmin	= minVal[2];
-			data->accel_zmax	= maxVal[2];
-			
-			
-			printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
-			minVal[0], mpu.rawAccel[0], maxVal[0], 
-			minVal[1], mpu.rawAccel[1], maxVal[1],
-			minVal[2], mpu.rawAccel[2], maxVal[2]);
+			for (i = 0; i < 3; i++) {
+				if(mag)
+				{
+					data->mag_min[i] = minVal[i];
+					data->mag_max[i] = maxVal[i];	
+					
+					printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
+					data->mag_min[0], mpu.rawMag[0], data->mag_max[0], 
+					data->mag_min[1], mpu.rawMag[1], data->mag_max[1],
+					data->mag_min[2], mpu.rawMag[2], data->mag_max[2]);					
+				}
+				else
+				{
+					data->accel_min[i] = minVal[i];
+					data->accel_max[i] = maxVal[i];	
 
+					printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
+					data->accel_min[0], mpu.rawAccel[0], data->accel_max[0], 
+					data->accel_min[1], mpu.rawAccel[1], data->accel_max[1],
+					data->accel_min[2], mpu.rawAccel[2], data->accel_max[2]);						
+				}
+			}
 			fflush(stdout);
 		}
 
 		linux_delay_ms(loop_delay);
 	}
 
-	printf("\n\n");
-
-	
-
-	data->mag_xmin		= -250;
-	data->mag_xmax		=  250;	
-	data->mag_ymin		= -250;
-	data->mag_ymax		=  250;
-	data->mag_zmin		= -250;
-	data->mag_zmax		=  250;
-	
-	
 	mpu9150_exit();
 	
 	return(0);
@@ -227,18 +247,14 @@ int main (int argc, char **argv) {
 				data.data_version = EEPROM_DATA_VERSION;
 				strcpy(data.serial, "000000");
 				data.zero_offset	=  0.0;
-				data.accel_xmin 	= -18000;
-				data.accel_xmax 	=  18000;
-				data.accel_ymin		= -18000;
-				data.accel_ymax		=  18000;
-				data.accel_zmin		= -18000;
-				data.accel_zmax		=  18000;
-				data.mag_xmin		= -250;
-				data.mag_xmax		=  250;	
-				data.mag_ymin		= -250;
-				data.mag_ymax		=  250;
-				data.mag_zmin		= -250;
-				data.mag_zmax		=  250;
+				
+				for (i = 0; i < 3; i++) 
+				{
+					data.accel_min[i] = 0x7fff;
+					data.accel_max[i] = 0x8000;
+					data.mag_min[i] = 0x7fff;
+					data.mag_max[i] = 0x8000;
+				}
 				
 				update_checksum(&data);
 				printf("Writing data to EEPROM ...\n");
@@ -271,7 +287,7 @@ int main (int argc, char **argv) {
 					if(ch == 27)
 						printf("Skipped.\n\n");
 					else
-						calibrate_mpu9150(&data);
+						calibrate_mpu9150(&data, 0);
 					
 					printf("3. Magnetometer calibration\n");
 					printf("==========================\n");
@@ -283,22 +299,18 @@ int main (int argc, char **argv) {
 					if(ch == 27)
 						printf("Skipped.\n\n");
 					else
-						calibrate_mpu9150(&data);				
+						calibrate_mpu9150(&data, 1);				
 					
 					printf("New pressure offset: %f\n",(data.zero_offset));
 					
-					printf("New accel min X:\t%d\n", data.accel_xmin);
-					printf("New accel max X:\t%d\n", data.accel_xmax);
-					printf("New accel min Y:\t%d\n", data.accel_ymin);
-					printf("New accel max Y:\t%d\n", data.accel_ymax);
-					printf("New accel min Z:\t%d\n", data.accel_zmin);
-					printf("New accel max Z:\t%d\n", data.accel_zmax);
-					printf("New mag min X:\t%d\n", data.mag_xmin);
-					printf("New mag max X:\t%d\n", data.mag_xmax);
-					printf("New mag min Y:\t%d\n", data.mag_ymin);
-					printf("New mag max Y:\t%d\n", data.mag_ymax);
-					printf("New mag min Z:\t%d\n", data.mag_zmin);
-					printf("New mag max Z:\t%d\n", data.mag_zmax);	
+					for (i = 0; i < 3; i++) 
+					{
+						printf("New accel min[%d]: \t%d\n", i, data.accel_min[i]);
+						printf("New accel max[%d]: \t%d\n", i, data.accel_max[i]);
+						printf("New mag min[%d]: \t%d\n", i, data.mag_min[i]);
+						printf("New mag max[%d]: \t%d\n", i, data.mag_max[i]);
+					}
+					
 					
 					// update EEPROM to latest data version
 					data.data_version = EEPROM_DATA_VERSION;				
@@ -346,18 +358,13 @@ int main (int argc, char **argv) {
 						case 2:
 						case 0:
 						default:
-							printf("IMU accelerometer min X:\t%d\n", data.accel_xmin);
-							printf("IMU accelerometer max X:\t%d\n", data.accel_xmax);
-							printf("IMU accelerometer min Y:\t%d\n", data.accel_ymin);
-							printf("IMU accelerometer max Y:\t%d\n", data.accel_ymax);
-							printf("IMU accelerometer min Z:\t%d\n", data.accel_zmin);
-							printf("IMU accelerometer max Z:\t%d\n", data.accel_zmax);
-							printf("IMU magnetometer min X:\t%d\n", data.mag_xmin);
-							printf("IMU magnetometer max X:\t%d\n", data.mag_xmax);
-							printf("IMU magnetometer min Y:\t%d\n", data.mag_ymin);
-							printf("IMU magnetometer max Y:\t%d\n", data.mag_ymax);
-							printf("IMU magnetometer min Z:\t%d\n", data.mag_zmin);
-							printf("IMU magnetometer max Z:\t%d\n", data.mag_zmax);
+							for (i = 0; i < 3; i++) 
+							{
+								printf("New accel min[%d]: \t%d\n", i, data.accel_min[i]);
+								printf("New accel max[%d]: \t%d\n", i, data.accel_max[i]);
+								printf("New mag min[%d]: \t%d\n", i, data.mag_min[i]);
+								printf("New mag max[%d]: \t%d\n", i, data.mag_max[i]);
+							}
 							break;
 					}
 						
@@ -434,5 +441,32 @@ int get_keypress_blocking(void) {
       res=tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
       assert(res==0);
       return(c);
+}
+
+int get_keypress_nonblocking(void)
+{
+  struct termios oldt, newt;
+  int ch;
+  int oldf;
+ 
+  tcgetattr(STDIN_FILENO, &oldt);
+  newt = oldt;
+  newt.c_lflag &= ~(ICANON | ECHO);
+  tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+  oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+  fcntl(STDIN_FILENO, F_SETFL, oldf | O_NONBLOCK);
+ 
+  ch = getchar();
+ 
+  tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+  fcntl(STDIN_FILENO, F_SETFL, oldf);
+ 
+  if(ch != EOF)
+  {
+    ungetc(ch, stdin);
+    return 1;
+  }
+ 
+  return 0;
 }
 	

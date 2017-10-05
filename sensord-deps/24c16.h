@@ -15,18 +15,10 @@ typedef struct {
 	char serial[6];
 	float zero_offset;
 	// added in v2:
-	signed int accel_xmin;
-	signed int accel_xmax;
-	signed int accel_ymin;
-	signed int accel_ymax;
-	signed int accel_zmin;
-	signed int accel_zmax;
-	signed int mag_xmin;
-	signed int mag_xmax;
-	signed int mag_ymin;
-	signed int mag_ymax;
-	signed int mag_zmin;
-	signed int mag_zmax;
+	signed int accel_min[3];
+	signed int accel_max[3];
+	signed int mag_min[3];
+	signed int mag_max[3];
 	char checksum;
 } t_eeprom_data;
 
