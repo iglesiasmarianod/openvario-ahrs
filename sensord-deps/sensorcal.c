@@ -27,6 +27,11 @@
 #include "mpu9150.h"
 #include "linux_glue.h"
 #include "../ahrs_settings.h"
+#include <termios.h>
+#include <assert.h>
+
+
+
 	
 int g_debug=0;
 FILE *fp_console=NULL;
@@ -87,13 +92,13 @@ int calibrate_mpu9150(t_eeprom_data* data)
 	
 	if (sample_rate == 0)
 		return 1;
-		
+	/*	TODO
 	if (mpu9150_init(i2c_bus, sample_rate, 0))
 	{
 		printf("Failed to connect to mpu9150\n");
 		return 1;
 	}
-
+*/
 	memset(&mpu, 0, sizeof(mpudata_t));
 
 	for (i = 0; i < 3; i++) {
@@ -103,12 +108,6 @@ int calibrate_mpu9150(t_eeprom_data* data)
 
 	loop_delay = (1000 / sample_rate) - 2;
 
-	printf("Accelerometer calibration\n");
-	printf("==========================\n");
-	printf("The calibration routine will require you to turn your OpenVario through 360 degrees in three dimensions!\n");
-	printf("If you cannot do this, press 'ESC' to cancel now. Once the calibration begins, itmust be completed.\n");
-	printf("Press any key to continue, or 'ESC' to cancel\n");
-	// TODO prompt
 	
 	printf("\nRotate your OpenVario gently 360 degrees in three dimensions. Keep turning until you can no longer increase the displayed numbers. When done, press 'ESC'.\n\n");
 
@@ -180,6 +179,7 @@ int main (int argc, char **argv) {
 	int result;
 	int c;
 	int i;
+	int ch;
 	char zero[1]={0x00};
 	
 
@@ -199,8 +199,10 @@ int main (int argc, char **argv) {
 	printf("This program comes with ABSOLUTELY NO WARRANTY;\n");
 	printf("This is free software, and you are welcome to redistribute it under certain conditions;\n"); 
 	
+	fflush(stdout);
+	
 	// open eeprom object
-	result = eeprom_open(&eeprom, 0x50);
+	result = 0 ;// TODO eeprom_open(&eeprom, 0x50);
 	if (result != 0)
 	{
 		printf("No EEPROM found !!\n");
@@ -246,11 +248,42 @@ int main (int argc, char **argv) {
 			case 'c':
 				// read actual EEPROM values
 				printf("Reading EEPROM values ...\n\n");
-				if( eeprom_read_data(&eeprom, &data) == 0)
+				if( 1) //TODO eeprom_read_data(&eeprom, &data) == 0)
 				{
-					calibrate_ams5915(&data);
+
+					printf("1. Differential pressure calibration\n");
+					printf("=====================================\n");
+					printf("Press any key to continue, or 'ESC' to skip\n\n");
 					
-					calibrate_mpu9150(&data);
+					ch = get_keypress_blocking();
+					if(ch == 27)
+						printf("Skipped.\n\n");
+					else
+						calibrate_ams5915(&data);
+						
+					
+					printf("2. Accelerometer calibration\n");
+					printf("=============================\n");
+					printf("The calibration routine will require you to turn your OpenVario through 360 degrees in three dimensions!\n");
+					printf("If you cannot do this, press 'ESC' to cancel now. Once the calibration begins, itmust be completed.\n");
+					printf("Press any key to continue, or 'ESC' to skip\n\n");
+					ch = get_keypress_blocking();
+					if(ch == 27)
+						printf("Skipped.\n\n");
+					else
+						calibrate_mpu9150(&data);
+					
+					printf("3. Magnetometer calibration\n");
+					printf("==========================\n");
+					printf("The calibration routine will require you to turn your OpenVario through 360 degrees in three dimensions!\n");
+					printf("If you cannot do this, press 'ESC' to cancel now. Once the calibration begins, itmust be completed.\n");
+					printf("Press any key to continue, or 'ESC' to skip\n\n");
+					
+					ch = get_keypress_blocking();
+					if(ch == 27)
+						printf("Skipped.\n\n");
+					else
+						calibrate_mpu9150(&data);				
 					
 					printf("New pressure offset: %f\n",(data.zero_offset));
 					
@@ -382,5 +415,24 @@ int main (int argc, char **argv) {
 		
 	printf("End ...\n");
 	return(exit_code);
+}
+
+int get_keypress_blocking(void) {
+      int c=0;
+
+      struct termios org_opts, new_opts;
+      int res=0;
+          //-----  store old settings -----------
+      res=tcgetattr(STDIN_FILENO, &org_opts);
+      assert(res==0);
+          //---- set new terminal parms --------
+      memcpy(&new_opts, &org_opts, sizeof(new_opts));
+      new_opts.c_lflag &= ~(ICANON | ECHO | ECHOE | ECHOK | ECHONL | ECHOPRT | ECHOKE | ICRNL);
+      tcsetattr(STDIN_FILENO, TCSANOW, &new_opts);
+      c=getchar();
+          //------  restore old settings ---------
+      res=tcsetattr(STDIN_FILENO, TCSANOW, &org_opts);
+      assert(res==0);
+      return(c);
 }
 	

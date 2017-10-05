@@ -20,3 +20,7 @@
 #define VERSION_MAJOR '0'
 #define VERSION_MINOR '1'
 #define VERSION_RELEASE '1'
+
+int get_keypress_blocking(void);
+int calibrate_ams5915(t_eeprom_data* data);
+int calibrate_mpu9150(t_eeprom_data* data);
