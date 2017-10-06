@@ -36,6 +36,9 @@ int eeprom_read_data(t_24c16 *eeprom, t_eeprom_data *data)
 	// read eeprom data to struct
 	result = eeprom_read(eeprom, (char*)data, 0x00, sizeof(*data));
 	
+	if (result)
+		return 1;
+	
 	// verify checksum
 	if (!verify_checksum(data))
 	{
