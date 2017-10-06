@@ -95,13 +95,12 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 	
 	if (sample_rate == 0)
 		return 1;
-	/*	TODO
+
 	if (mpu9150_init(i2c_bus, sample_rate, 0))
 	{
 		printf("Failed to connect to mpu9150\n");
 		return 1;
 	}
-*/
 	memset(&mpu, 0, sizeof(mpudata_t));
 
 	for (i = 0; i < 3; i++) 
@@ -113,39 +112,70 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 	loop_delay = (1000 / sample_rate) - 2;
 
 	
-	printf("\nRotate your OpenVario gently 360 degrees in three dimensions. Keep turning until you can no longer increase the displayed numbers. When done, press any key.\n\n");
+	printf("\nRotate your OpenVario gently 360 degrees in three dimensions.\n");
+	printf("Keep turning until you can no longer increase the displayed numbers. When done, press any key, or press 'ESC' to cancel.\n\n");
 
 	linux_delay_ms(loop_delay);
 	
-	while (!done) {
-		if(get_keypress_nonblocking()) {
+	while (!done) 
+	{
+		if(get_keypress_nonblocking()) 
+		{
+			mpu9150_exit();
 			k = getchar();
 			done = 1;
+			if((k != 27) && change)
+			{
+				if(mag)
+				{
+					data->mag_min[i] = minVal[i];
+					data->mag_max[i] = maxVal[i];
+				}
+				else
+				{
+					data->accel_min[i] = minVal[i];
+					data->accel_max[i] = maxVal[i];						
+				}
+				
+				return 0;
+			}
+			return 1;
 		}
 			
 		change = 0;
-		if(mag) {
-			if (mpu9150_read_mag(&mpu) == 0) {
-				for (i = 0; i < 3; i++) {
-					if (mpu.rawMag[i] < minVal[i]) {
+		if(mag) 
+		{
+			if (mpu9150_read_mag(&mpu) == 0)
+			{
+				for (i = 0; i < 3; i++)
+				{
+					if (mpu.rawMag[i] < minVal[i])
+					{
 						minVal[i] = mpu.rawMag[i];
 						change = 1;
 					}
 				
-					if (mpu.rawMag[i] > maxVal[i]) {
+					if (mpu.rawMag[i] > maxVal[i])
+					{
 						maxVal[i] = mpu.rawMag[i];
 						change = 1;
 					}
 				}
 			}
-		} else {
-			if (mpu9150_read_dmp(&mpu) == 0) {
-				for (i = 0; i < 3; i++) {
-					if (mpu.rawAccel[i] < minVal[i]) {
+		}
+		else
+		{
+			if (mpu9150_read_dmp(&mpu) == 0)
+			{
+				for (i = 0; i < 3; i++)
+				{
+					if (mpu.rawAccel[i] < minVal[i])
+					{
 						minVal[i] = mpu.rawAccel[i];
 						change = 1;
 					}
-					if (mpu.rawAccel[i] > maxVal[i]) {
+					if (mpu.rawAccel[i] > maxVal[i])
+					{
 						maxVal[i] = mpu.rawAccel[i];
 						change = 1;
 					}
@@ -153,30 +183,17 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 			}
 		}
 	
-		if (change) {
+		if (change) 
+		{
 			
-			for (i = 0; i < 3; i++) {
-				if(mag)
-				{
-					data->mag_min[i] = minVal[i];
-					data->mag_max[i] = maxVal[i];	
-					
-					printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
-					data->mag_min[0], mpu.rawMag[0], data->mag_max[0], 
-					data->mag_min[1], mpu.rawMag[1], data->mag_max[1],
-					data->mag_min[2], mpu.rawMag[2], data->mag_max[2]);					
-				}
-				else
-				{
-					data->accel_min[i] = minVal[i];
-					data->accel_max[i] = maxVal[i];	
-
-					printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
-					data->accel_min[0], mpu.rawAccel[0], data->accel_max[0], 
-					data->accel_min[1], mpu.rawAccel[1], data->accel_max[1],
-					data->accel_min[2], mpu.rawAccel[2], data->accel_max[2]);						
-				}
+			for (i = 0; i < 3; i++) 
+			{
+				printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
+				minVal[0], mpu.rawMag[0], maxVal[0], 
+				minVal[1], mpu.rawMag[1], maxVal[1],
+				minVal[2], mpu.rawMag[2], maxVal[2]);					
 			}
+
 			fflush(stdout);
 		}
 
@@ -185,7 +202,7 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 
 	mpu9150_exit();
 	
-	return(0);
+	return 0;
 }
 
 
@@ -222,7 +239,7 @@ int main (int argc, char **argv) {
 	fflush(stdout);
 	
 	// open eeprom object
-	result = 0 ;// TODO eeprom_open(&eeprom, 0x50);
+	result = eeprom_open(&eeprom, 0x50);
 	if (result != 0)
 	{
 		printf("No EEPROM found !!\n");
@@ -264,7 +281,7 @@ int main (int argc, char **argv) {
 			case 'c':
 				// read actual EEPROM values
 				printf("Reading EEPROM values ...\n\n");
-				if( 1) //TODO eeprom_read_data(&eeprom, &data) == 0)
+				if(eeprom_read_data(&eeprom, &data) == 0)
 				{
 
 					printf("1. Differential pressure calibration\n");
@@ -281,25 +298,27 @@ int main (int argc, char **argv) {
 					printf("2. Accelerometer calibration\n");
 					printf("=============================\n");
 					printf("The calibration routine will require you to turn your OpenVario through 360 degrees in three dimensions!\n");
-					printf("If you cannot do this, press 'ESC' to cancel now. Once the calibration begins, itmust be completed.\n");
+					printf("If you cannot do this, press 'ESC' to cancel now.\n");
 					printf("Press any key to continue, or 'ESC' to skip\n\n");
 					ch = get_keypress_blocking();
 					if(ch == 27)
 						printf("Skipped.\n\n");
 					else
-						calibrate_mpu9150(&data, 0);
+						if(calibrate_mpu9150(&data, 0))
+							printf("Skipped.\n\n");
 					
 					printf("3. Magnetometer calibration\n");
 					printf("==========================\n");
 					printf("The calibration routine will require you to turn your OpenVario through 360 degrees in three dimensions!\n");
-					printf("If you cannot do this, press 'ESC' to cancel now. Once the calibration begins, itmust be completed.\n");
+					printf("If you cannot do this, press 'ESC' to cancel now. \n");
 					printf("Press any key to continue, or 'ESC' to skip\n\n");
 					
 					ch = get_keypress_blocking();
 					if(ch == 27)
 						printf("Skipped.\n\n");
 					else
-						calibrate_mpu9150(&data, 1);				
+						if(calibrate_mpu9150(&data, 1))
+							printf("Skipped.\n\n");				
 					
 					printf("New pressure offset: %f\n",(data.zero_offset));
 					
@@ -311,11 +330,8 @@ int main (int argc, char **argv) {
 						printf("New mag max[%d]: \t%d\n", i, data.mag_max[i]);
 					}
 					
-					
 					// update EEPROM to latest data version
 					data.data_version = EEPROM_DATA_VERSION;				
-					
-					
 					
 					update_checksum(&data);
 					printf("Writing data to EEPROM ...\n");
