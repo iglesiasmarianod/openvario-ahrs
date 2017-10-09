@@ -39,10 +39,7 @@
 int set_cal(int mag, char *cal_file);
 void read_loop(unsigned int sample_rate);
 void print_rpyl(mpudata_t *mpu, int sock);
-void print_fused_euler_angles(mpudata_t *mpu);
-void print_fused_quaternion(mpudata_t *mpu);
 void print_calibrated_accel(mpudata_t *mpu);
-void print_calibrated_mag(mpudata_t *mpu);
 void register_sig_handler();
 void sigint_handler(int sig);
 
@@ -185,30 +182,6 @@ void print_rpyl(mpudata_t *mpu, int sock)
 
 
 
-
-
-void print_fused_euler_angles(mpudata_t *mpu)
-{
-	printf("\rX: %0.0f Y: %0.0f Z: %0.0f        ",
-			mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE, 
-			mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE, 
-			mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE);
-
-	fflush(stdout);
-}
-
-
-void print_fused_quaternions(mpudata_t *mpu)
-{
-	printf("\rW: %0.2f X: %0.2f Y: %0.2f Z: %0.2f        ",
-			mpu->fusedQuat[QUAT_W],
-			mpu->fusedQuat[QUAT_X],
-			mpu->fusedQuat[QUAT_Y],
-			mpu->fusedQuat[QUAT_Z]);
-
-	fflush(stdout);
-}
-
 void print_calibrated_accel(mpudata_t *mpu)
 {
 	printf("\rX: %05d Y: %05d Z: %05d        ",
@@ -219,15 +192,6 @@ void print_calibrated_accel(mpudata_t *mpu)
 	fflush(stdout);
 }
 
-void print_calibrated_mag(mpudata_t *mpu)
-{
-	printf("\rX: %03d Y: %03d Z: %03d        ",
-			mpu->calibratedMag[VEC3_X], 
-			mpu->calibratedMag[VEC3_Y], 
-			mpu->calibratedMag[VEC3_Z]);
-
-	fflush(stdout);
-}
 
 int set_cal(int mag, char *cal_file)
 {

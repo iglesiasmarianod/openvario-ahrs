@@ -68,7 +68,7 @@ ads1110.o : $(TMPSENSDIR)/ads1110.c
 	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ads1110.c
 	
 main.o : $(TMPSENSDIR)/main.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/main.c
+	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSENSDIR)/main.c
 	
 nmea.o : $(TMPSENSDIR)/nmea.c
 	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/nmea.c

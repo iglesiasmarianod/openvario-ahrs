@@ -49,13 +49,23 @@
 #include "AirDensity.h"
 #include "24c16.h"
 
+#include "mpu9150.h"
+#include "linux_glue.h"
+#include "../ahrs_settings.h"
+
 #define I2C_ADDR 0x76
 #define PRESSURE_SAMPLE_RATE 	20	// sample rate of pressure values (Hz)
 #define TEMP_SAMPLE_RATE 		5	// sample rate of temp values (Hz)
 #define NMEA_SLOW_SEND_RATE		2	// NMEA send rate for SLOW Data (pressures, etc..) (Hz)
+#define MPU_SAMPLE_RATE			20  // sample rate of MPU9150
+#define YAW_MIX_FACTOR			4   // Yaw mix factor for fused mag/accel values
+#define I2C_BUS					1
  
 #define MEASTIMER (SIGRTMAX)
-#define DELTA_TIME_US(T1, T2)	(((T1.tv_sec+1.0e-9*T1.tv_nsec)-(T2.tv_sec+1.0e-9*T2.tv_nsec))*1000000)			
+#define DELTA_TIME_US(T1, T2)	(((T1.tv_sec+1.0e-9*T1.tv_nsec)-(T2.tv_sec+1.0e-9*T2.tv_nsec))*1000000)	
+
+#define OV_PORT 				4353  // Port for OpenVario output
+#define AHRS_PORT				1000  // Port for LevilAHRD output
 					
 timer_t  measTimer;
 int g_debug=0;
@@ -123,6 +133,8 @@ void sigintHandler(int sig_num){
 	//fclose(fp_rawlog);
 	printf("Exiting ...\n");
 	fclose(fp_console);
+	
+	mpu9150_exit();
 	
 	exit(0);
 }
@@ -366,6 +378,53 @@ void pressure_measurement_handler(void)
 		meas_counter++;
 	}
 }
+
+/**
+* AHRS_message: Output in NMEA format as
+* expected by XCSoar LevilAHRS Driver:
+* $RPYL,Roll,Pitch,MagnHeading,SideSlip,YawRate,G,errorcode
+*
+* Error bits (not implemented yet):
+*   0: Roll gyro test failed  
+*   1: Roll gyro test failed 
+*   2: Roll gyro test failed 
+*   3: Acc X test failed 
+*   4: Acc Y test failed 
+*   5: Acc Z test failed 
+*   6: Watchdog test failed
+*   7: Ram test failed
+*   8: EEPROM access test failed
+*   9: EEPROM checksum test failed
+*  10: Flash checksum test failed
+*  11: Low voltage error
+*  12: High temperature error (>60 C)
+*  13: Inconsistent roll data between gyro and acc.
+*  14: Inconsistent pitch data between gyro and acc.
+*  15: Inconsistent yaw data between gyro and acc.
+*/
+void AHRS_message(mpudata_t *mpu, int sock)
+{
+	
+	int sock_err;
+	char s[256];
+	
+	//  removed  RAD_TO_DEGREE conversion
+	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0\r\n",
+	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE * 10,
+	       		mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE * 10,
+	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE * 10);
+	       		
+	 // TODO: Add 'G'
+	
+	// Send NMEA string via socket to XCSoar
+	if ((sock_err = send(sock, s, strlen(s), 0)) < 0)
+	{	
+		fprintf(stderr, "send failed\n");
+	}
+	
+	
+}
+
 	
 int main (int argc, char **argv) {
 	
@@ -376,6 +435,7 @@ int main (int argc, char **argv) {
 	
 	t_24c16 eeprom;
 	t_eeprom_data data;
+	mpudata_t mpu;
 	
 	// for daemonizing
 	pid_t pid;
@@ -388,8 +448,9 @@ int main (int argc, char **argv) {
 	struct sigaction sigact;
 	
 	// socket communication
-	int sock;
+	int sock, sock_imu;
 	struct sockaddr_in server;
+	struct sockaddr_in server_imu;
 	
 	// initialize variables
 	static_sensor.offset = 0.0;
@@ -403,6 +464,8 @@ int main (int argc, char **argv) {
 	
 	config.output_POV_E = 0;
 	config.output_POV_P_Q = 0;
+	
+	//TODO:: ADD DEFAULT CALIBRATIONS HERE ******
 	
 	//open file for raw output
 	//fp_rawlog = fopen("raw.log","w");
@@ -555,6 +618,18 @@ int main (int argc, char **argv) {
 		//initialize voltage sensor
 		if(voltage_sensor.present)
 			ads1110_init(&voltage_sensor);
+			
+		// Initialise MPU
+		if (mpu9150_init(I2C_BUS, MPU_SAMPLE_RATE, YAW_MIX_FACTOR))
+		{
+			fprintf(stderr, "Failed to open MPU9150\n");
+		}
+		else
+		{
+			//TODO: Get Cal from EEPROM!
+			//set_cal(0, accel_cal_file);
+			//set_cal(1, mag_cal_file);		
+		}
 		
 		// poll sensors for offset compensation
 		ms5611_start_temp(&static_sensor);
@@ -585,17 +660,28 @@ int main (int argc, char **argv) {
 			
 	while(1)
 	{
-		// reset sock_err variables
+		// reset sock_err variable
 		sock_err = 0;
 		
 		// Open Socket for TCP/IP communication
 		sock = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock == -1)
 			fprintf(stderr, "could not create socket\n");
-  
+
 		server.sin_addr.s_addr = inet_addr("127.0.0.1");
 		server.sin_family = AF_INET;
-		server.sin_port = htons(4353);
+		server.sin_port = htons(OV_PORT);
+
+
+		// Open Separate Socket for LevilAHRS driver
+		sock_imu = socket(AF_INET, SOCK_STREAM, 0);
+		if (sock_imu == -1)
+			fprintf(stderr, "could not create socket\n");
+
+		server_imu.sin_addr.s_addr = inet_addr("127.0.0.1");
+		server_imu.sin_family = AF_INET;
+		server_imu.sin_port = htons(10000);
+  
 		
 		// try to connect to XCSoar
 		while (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
@@ -603,6 +689,11 @@ int main (int argc, char **argv) {
 			fflush(stdout);
 			sleep(1);
 		}
+		while (connect(sock_imu, (struct sockaddr *)&server_imu, sizeof(server_imu)) < 0) {
+			fprintf(stderr, "failed to connect (IMU), trying again\n");
+			fflush(stdout);
+			sleep(1);
+		}		
 				
 		// socket connected
 		// main data acquisition loop
@@ -617,14 +708,20 @@ int main (int argc, char **argv) {
 			}
 			pressure_measurement_handler();
 			sock_err = NMEA_message_handler(sock);
+			
+			// TODO: All timings are hard-coded
+			if (mpu9150_read(&mpu) == 0)
+				AHRS_message(&mpu, sock_imu);
+			
 		
 		} // while(1)
 		
 		// connection dropped
 		close(sock);
+		close(sock_imu);
 	}
 	return 0;
-}	
+}
 
 void print_runtime_config(void)
 {
