@@ -22,13 +22,18 @@ CFLAGS = -Wall -mfloat-abi=hard -mfpu=vfp -fsingle-precision-constant -B$(LIBDIR
 
 ### end cross-build defs ###
 
-# add -DI2C_DEBUG for debugging
-DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY -I${INCDIR} -L${LIBDIR}
 
 MPUDIR = mpu9150
 EMPLDIR = ${MPUDIR}/eMPL
 GLUEDIR = ${MPUDIR}/glue
-SENSORCALDIR = sensord-deps
+TMPSENSDIR = sensord-deps  
+SENSORD_REAL_PATH = ../sensord
+
+GIT_VERSION := $(shell cd $(SENSORD_REAL_PATH); git describe --dirty)
+
+# add -DI2C_DEBUG for debugging
+DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY -I${INCDIR} -L${LIBDIR}  -DVERSION_GIT=\"$(GIT_VERSION)\"
+
 
 OBJS = inv_mpu.o \
        inv_mpu_dmp_motion_driver.o \
@@ -39,18 +44,22 @@ OBJS = inv_mpu.o \
        
 OBJS_SENSORCAL = $(OBJS) 24c16.o ams5915.o
 
-all : ahrsd imucal sensorcal
+OBJS_SENSORD = $(OBJS) ms5611.o ams5915.o ads1110.o nmea.o timer.o KalmanFilter1d.o cmdline_parser.o configfile_parser.o vario.o AirDensity.o 24c16.o
 
+
+all : ahrsd imucal sensorcal sensord
+
+sensorcal : $(OBJS_SENSORCAL) sensorcal.o
+	$(CC) $(CFLAGS) $(OBJS_SENSORCAL) sensorcal.o -lrt -lm -o sensorcal
+	
+sensord : $(OBJS_SENSORD) main.o
+	$(CC) $(CFLAGS) $(OBJS_SENSORD) main.o -lrt -lm -o sensord
 
 ahrsd : $(OBJS) ahrsd.o
 	$(CC) $(CFLAGS) $(OBJS) ahrsd.o -lm -o ahrsd
 
 imucal : $(OBJS) imucal.o
 	$(CC) $(CFLAGS) $(OBJS) imucal.o -lm -o imucal
-	
-sensorcal : $(OBJS_SENSORCAL) sensorcal.o
-	$(CC) $(CFLAGS) $(OBJS_SENSORCAL) sensorcal.o -lrt -lm -o sensorcal
-
 	
 ahrsd.o : ahrsd.c ahrs_settings.h
 	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c ahrsd.c
@@ -60,14 +69,44 @@ imucal.o : imucal.c ahrs_settings.h
 	
 
 ## --------- TEMP SCAFFOLD -----------------
-sensorcal.o: $(SENSORCALDIR)/sensorcal.c $(SENSORCALDIR)/def.h
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(SENSORCALDIR)/sensorcal.c
+sensorcal.o: $(TMPSENSDIR)/sensorcal.c $(TMPSENSDIR)/def.h
+	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSENSDIR)/sensorcal.c
 
-24c16.o : $(SENSORCALDIR)/24c16.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/24c16.c
+24c16.o : $(TMPSENSDIR)/24c16.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/24c16.c
 	
-ams5915.o : $(SENSORCALDIR)/ams5915.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/ams5915.c
+ams5915.o : $(TMPSENSDIR)/ams5915.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ams5915.c
+	
+ms5611.o : $(TMPSENSDIR)/ms5611.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ms5611.c
+	
+ads1110.o : $(TMPSENSDIR)/ads1110.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ads1110.c
+	
+main.o : $(TMPSENSDIR)/main.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/main.c
+	
+nmea.o : $(TMPSENSDIR)/nmea.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/nmea.c
+	
+timer.o : $(TMPSENSDIR)/timer.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/timer.c
+	
+KalmanFilter1d.o : $(TMPSENSDIR)/KalmanFilter1d.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/KalmanFilter1d.c
+	
+cmdline_parser.o : $(TMPSENSDIR)/cmdline_parser.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/cmdline_parser.c
+	
+configfile_parser.o : $(TMPSENSDIR)/configfile_parser.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/configfile_parser.c
+	
+vario.o : $(TMPSENSDIR)/vario.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/vario.c
+	
+AirDensity.o : $(TMPSENSDIR)/AirDensity.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/AirDensity.c
 	
 ## --------- END TEMP SCAFFOLD
 
@@ -91,9 +130,9 @@ inv_mpu.o : $(EMPLDIR)/inv_mpu.c
 
 
 install:
-	scp -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no ahrsd imucal root@192.168.1.16:/home/root
+	scp ahrsd imucal sensord sensorcal root@openvario:/home/root
 
 
 clean:
-	rm -f *.o ahrsd imucal
+	rm -f *.o ahrsd imucal sensorca sensord
 

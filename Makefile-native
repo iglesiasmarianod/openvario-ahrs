@@ -5,13 +5,18 @@
 CC = gcc
 CFLAGS = -Wall
 
-# add -DI2C_DEBUG for debugging
-DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY
+
 
 MPUDIR = mpu9150
 EMPLDIR = ${MPUDIR}/eMPL
 GLUEDIR = ${MPUDIR}/glue
-SENSORCALDIR = sensord-deps
+TMPSENSDIR = sensord-deps
+SENSORD_REAL_PATH = ../sensord
+
+GIT_VERSION := $(shell cd $(SENSORD_REAL_PATH); git describe --dirty)
+
+# add -DI2C_DEBUG for debugging
+DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY -DVERSION_GIT=\"$(GIT_VERSION)\"
 
 
 OBJS = inv_mpu.o \
@@ -23,10 +28,9 @@ OBJS = inv_mpu.o \
 
 OBJS_SENSORCAL = $(OBJS) 24c16.o ams5915.o
 
-OBJS_SENSORD = $(OBJS) ms5611.o ams5915.o ads1110.o main.o nmea.o timer.o KalmanFilter1d.o cmdline_parser.o configfile_parser.o vario.o AirDensity.o 24c16.o
+OBJS_SENSORD = $(OBJS) ms5611.o ams5915.o ads1110.o nmea.o timer.o KalmanFilter1d.o cmdline_parser.o configfile_parser.o vario.o AirDensity.o 24c16.o
 
 all : ahrsd imucal sensorcal sensord
-
 
 ahrsd : $(OBJS) ahrsd.o
 	$(CC) $(CFLAGS) $(OBJS) ahrsd.o -lm -o ahrsd
@@ -37,8 +41,8 @@ imucal : $(OBJS) imucal.o
 sensorcal : $(OBJS_SENSORCAL) sensorcal.o
 	$(CC) $(CFLAGS) $(OBJS_SENSORCAL) sensorcal.o -lrt -lm -o sensorcal
 	
-sensord : $(OBJS_SENSORD) sensord.o
-	$(CC) $(CFLAGS) $(OBJS_SENSORD) sensord.o -lrt -lm -o sensord
+sensord : $(OBJS_SENSORD) main.o
+	$(CC) $(CFLAGS) $(OBJS_SENSORD) main.o -lrt -lm -o sensord
 	
 ahrsd.o : ahrsd.c
 	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c ahrsd.c
@@ -48,48 +52,44 @@ imucal.o : imucal.c
 
 ## --------- TEMP SCAFFOLD -----------------
 
-sensord.o: $(SENSORCALDIR)/sensord.c $(SENSORCALDIR)/def.h
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(SENSORCALDIR)/sensord.c
-
-
-sensorcal.o: $(SENSORCALDIR)/sensorcal.c $(SENSORCALDIR)/def.h
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(SENSORCALDIR)/sensorcal.c
-
-24c16.o : $(SENSORCALDIR)/24c16.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/24c16.c
+sensorcal.o : $(TMPSENSDIR)/sensorcal.c $(TMPSENSDIR)/def.h
+	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSENSDIR)/sensorcal.c
 	
-ams5915.o : $(SENSORCALDIR)/ams5915.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/ams5915.c
+24c16.o : $(TMPSENSDIR)/24c16.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/24c16.c
 	
-ms5611.o : $(SENSORCALDIR)/ms5611.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/ms5611.c
+ams5915.o : $(TMPSENSDIR)/ams5915.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ams5915.c
 	
-ads1110.o : $(SENSORCALDIR)/ads1110.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/ads1110.c
+ms5611.o : $(TMPSENSDIR)/ms5611.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ms5611.c
 	
-main.o : $(SENSORCALDIR)/main.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/main.c
+ads1110.o : $(TMPSENSDIR)/ads1110.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ads1110.c
 	
-nmea.o : $(SENSORCALDIR)/nmea.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/nmea.c
+main.o : $(TMPSENSDIR)/main.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/main.c
 	
-timer.o : $(SENSORCALDIR)/timer.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/timer.c
+nmea.o : $(TMPSENSDIR)/nmea.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/nmea.c
 	
-KalmanFilter1d.o : $(SENSORCALDIR)/KalmanFilter1d.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/KalmanFilter1d.c
+timer.o : $(TMPSENSDIR)/timer.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/timer.c
 	
-cmdline_parser.o : $(SENSORCALDIR)/cmdline_parser.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/cmdline_parser.c
+KalmanFilter1d.o : $(TMPSENSDIR)/KalmanFilter1d.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/KalmanFilter1d.c
 	
-configfile_parser.o : $(SENSORCALDIR)/configfile_parser.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/configfile_parser.c
+cmdline_parser.o : $(TMPSENSDIR)/cmdline_parser.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/cmdline_parser.c
 	
-vario.o : $(SENSORCALDIR)/vario.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/vario.c
+configfile_parser.o : $(TMPSENSDIR)/configfile_parser.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/configfile_parser.c
 	
-AirDensity.o : $(SENSORCALDIR)/AirDensity.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(SENSORCALDIR)/AirDensity.c
+vario.o : $(TMPSENSDIR)/vario.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/vario.c
+	
+AirDensity.o : $(TMPSENSDIR)/AirDensity.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/AirDensity.c
 	
 ## --------- END TEMP SCAFFOLD
 
@@ -116,4 +116,4 @@ clean:
 	rm -f *.o
 
 veryclean: clean
-	rm -f ahrsd imucal sensorcal
+	rm -f ahrsd imucal sensorcal sensord

@@ -1,0 +1,19 @@
+Error opening file: Permission denied
+ioctl error: Bad file descriptor
+=========================================================================
+Runtime Configuration:
+----------------------
+Vario:
+  Kalman Accel:	0.000000
+Sensor TEK:
+  Offset: 	0.000000
+  Linearity: 	1.000000
+Sensor STATIC:
+  Offset: 	0.000000
+  Linearity: 	1.000000
+Sensor TOTAL:
+  Offset: 	0.000000
+  Linearity: 	1.000000
+=========================================================================
+Error opening file: Permission denied
+Open sensor failed !!
