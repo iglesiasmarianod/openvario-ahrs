@@ -108,17 +108,6 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 	{
 		minVal[i] = 0;
 		maxVal[i] = 0;
-		if(mag)
-		{
-			data->mag_min[i] = 0;
-			data->mag_max[i] = 0;
-		}
-		else
-		{
-			data->accel_min[i] = 0;
-			data->accel_max[i] = 0;
-
-		}
 	}
 
 	loop_delay = (1000 / sample_rate) - 2;
@@ -401,10 +390,10 @@ int main (int argc, char **argv) {
 						default:
 							for (i = 0; i < 3; i++) 
 							{
-								printf("New accel min[%d]: \t%d\n", i, data.accel_min[i]);
-								printf("New accel max[%d]: \t%d\n", i, data.accel_max[i]);
-								printf("New mag min[%d]: \t%d\n", i, data.mag_min[i]);
-								printf("New mag max[%d]: \t%d\n", i, data.mag_max[i]);
+								printf("Accel min[%d]: \t%d\n", i, data.accel_min[i]);
+								printf("Accel max[%d]: \t%d\n", i, data.accel_max[i]);
+								printf("Mag min[%d]: \t%d\n", i, data.mag_min[i]);
+								printf("Mag max[%d]: \t%d\n", i, data.mag_max[i]);
 							}
 							break;
 					}
