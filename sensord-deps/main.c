@@ -65,7 +65,7 @@
 #define DELTA_TIME_US(T1, T2)	(((T1.tv_sec+1.0e-9*T1.tv_nsec)-(T2.tv_sec+1.0e-9*T2.tv_nsec))*1000000)	
 
 #define OV_PORT 				4353  // Port for OpenVario output
-#define AHRS_PORT				1000  // Port for LevilAHRD output
+#define AHRS_PORT				2000  // Port for LevilAHRD output
 					
 timer_t  measTimer;
 int g_debug=0;
@@ -88,7 +88,7 @@ float tep;
 float p_static;
 float p_dynamic;
 
-int g_foreground=FALSE;
+int g_foreground=TRUE;
 int g_secordcomp=FALSE;
 
 t_io_mode io_mode;
@@ -647,6 +647,7 @@ int main (int argc, char **argv) {
 			usleep(10000);
 			mpu9150_set_mag_cal(&magCal);
 			usleep(10000);	
+			memset(&mpu, 0, sizeof(mpudata_t));
 		}
 		
 		// poll sensors for offset compensation
@@ -698,7 +699,7 @@ int main (int argc, char **argv) {
 
 		server_imu.sin_addr.s_addr = inet_addr("127.0.0.1");
 		server_imu.sin_family = AF_INET;
-		server_imu.sin_port = htons(10000);
+		server_imu.sin_port = htons(AHRS_PORT);
   
 		
 		// try to connect to XCSoar
