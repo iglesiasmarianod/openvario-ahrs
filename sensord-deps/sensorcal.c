@@ -88,8 +88,9 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 	int i;
 	unsigned long loop_delay;
 	mpudata_t mpu;
-	short minVal[3], change;
-	short maxVal[3];
+	signed int minVal[3];
+	signed int maxVal[3];
+	short change;
 	int k;
 	int done = 0;
 	
@@ -105,8 +106,19 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 
 	for (i = 0; i < 3; i++) 
 	{
-		minVal[i] = 0x7fff;
-		maxVal[i] = 0x8000;
+		minVal[i] = 0;
+		maxVal[i] = 0;
+		if(mag)
+		{
+			data->mag_min[i] = 0;
+			data->mag_max[i] = 0;
+		}
+		else
+		{
+			data->accel_min[i] = 0;
+			data->accel_max[i] = 0;
+
+		}
 	}
 
 	loop_delay = (1000 / sample_rate) - 2;
@@ -124,19 +136,21 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 			mpu9150_exit();
 			k = getchar();
 			done = 1;
-			if((k != 27) && change)
+			if(k != 27)
 			{
-				if(mag)
+				for (i=0; i<3; i++)
 				{
-					data->mag_min[i] = minVal[i];
-					data->mag_max[i] = maxVal[i];
+					if(mag)
+					{
+						data->mag_min[i] = minVal[i];
+						data->mag_max[i] = maxVal[i];
+					}
+					else
+					{
+						data->accel_min[i] = minVal[i];
+						data->accel_max[i] = maxVal[i];
+					}
 				}
-				else
-				{
-					data->accel_min[i] = minVal[i];
-					data->accel_max[i] = maxVal[i];						
-				}
-				
 				return 0;
 			}
 			return 1;
@@ -188,10 +202,21 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 			
 			for (i = 0; i < 3; i++) 
 			{
-				printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
-				minVal[0], mpu.rawMag[0], maxVal[0], 
-				minVal[1], mpu.rawMag[1], maxVal[1],
-				minVal[2], mpu.rawMag[2], maxVal[2]);					
+				if(mag)
+				{
+					printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
+					minVal[0], mpu.rawMag[0], maxVal[0],
+					minVal[1], mpu.rawMag[1], maxVal[1],
+					minVal[2], mpu.rawMag[2], maxVal[2]);
+				}
+					else
+				{
+					printf("\rX %d|%d|%d    Y %d|%d|%d    Z %d|%d|%d             ",
+					minVal[0], mpu.rawAccel[0], maxVal[0],
+					minVal[1], mpu.rawAccel[1], maxVal[1],
+					minVal[2], mpu.rawAccel[2], maxVal[2]);
+
+				}
 			}
 
 			fflush(stdout);
@@ -267,10 +292,10 @@ int main (int argc, char **argv) {
 				
 				for (i = 0; i < 3; i++) 
 				{
-					data.accel_min[i] = 0x7fff;
-					data.accel_max[i] = 0x8000;
-					data.mag_min[i] = 0x7fff;
-					data.mag_max[i] = 0x8000;
+					data.accel_min[i] = 0x0000;
+					data.accel_max[i] = 0x0000;
+					data.mag_min[i] = 0x0000;
+					data.mag_max[i] = 0x0000;
 				}
 				
 				update_checksum(&data);

@@ -26,7 +26,7 @@ CFLAGS = -Wall -mfloat-abi=hard -mfpu=vfp -fsingle-precision-constant -B$(LIBDIR
 MPUDIR = mpu9150
 EMPLDIR = ${MPUDIR}/eMPL
 GLUEDIR = ${MPUDIR}/glue
-TMPSENSDIR = sensord-deps  
+TMPSDIR = ./sensord-deps
 SENSORD_REAL_PATH = ../sensord
 
 GIT_VERSION := $(shell cd $(SENSORD_REAL_PATH); git describe --dirty)
@@ -69,44 +69,45 @@ imucal.o : imucal.c ahrs_settings.h
 	
 
 ## --------- TEMP SCAFFOLD -----------------
-sensorcal.o: $(TMPSENSDIR)/sensorcal.c $(TMPSENSDIR)/def.h
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSENSDIR)/sensorcal.c
 
-24c16.o : $(TMPSENSDIR)/24c16.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/24c16.c
+sensorcal.o : $(TMPSDIR)/sensorcal.c $(TMPSDIR)/def.h
+	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSDIR)/sensorcal.c
+
+24c16.o : $(TMPSDIR)/24c16.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/24c16.c
 	
-ams5915.o : $(TMPSENSDIR)/ams5915.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ams5915.c
+ams5915.o : $(TMPSDIR)/ams5915.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/ams5915.c
 	
-ms5611.o : $(TMPSENSDIR)/ms5611.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ms5611.c
+ms5611.o : $(TMPSDIR)/ms5611.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/ms5611.c
 	
-ads1110.o : $(TMPSENSDIR)/ads1110.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/ads1110.c
+ads1110.o : $(TMPSDIR)/ads1110.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/ads1110.c
 	
-main.o : $(TMPSENSDIR)/main.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/main.c
+main.o : $(TMPSDIR)/main.c
+	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSDIR)/main.c
 	
-nmea.o : $(TMPSENSDIR)/nmea.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/nmea.c
+nmea.o : $(TMPSDIR)/nmea.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/nmea.c
 	
-timer.o : $(TMPSENSDIR)/timer.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/timer.c
+timer.o : $(TMPSDIR)/timer.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/timer.c
 	
-KalmanFilter1d.o : $(TMPSENSDIR)/KalmanFilter1d.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/KalmanFilter1d.c
+KalmanFilter1d.o : $(TMPSDIR)/KalmanFilter1d.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/KalmanFilter1d.c
 	
-cmdline_parser.o : $(TMPSENSDIR)/cmdline_parser.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/cmdline_parser.c
+cmdline_parser.o : $(TMPSDIR)/cmdline_parser.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/cmdline_parser.c
 	
-configfile_parser.o : $(TMPSENSDIR)/configfile_parser.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/configfile_parser.c
+configfile_parser.o : $(TMPSDIR)/configfile_parser.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/configfile_parser.c
 	
-vario.o : $(TMPSENSDIR)/vario.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/vario.c
+vario.o : $(TMPSDIR)/vario.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/vario.c
 	
-AirDensity.o : $(TMPSENSDIR)/AirDensity.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSENSDIR)/AirDensity.c
+AirDensity.o : $(TMPSDIR)/AirDensity.c
+	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/AirDensity.c
 	
 ## --------- END TEMP SCAFFOLD
 
