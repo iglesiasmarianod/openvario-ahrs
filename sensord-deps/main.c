@@ -436,6 +436,8 @@ int main (int argc, char **argv) {
 	t_24c16 eeprom;
 	t_eeprom_data data;
 	mpudata_t mpu;
+	caldata_t accelCal;
+	caldata_t magCal;
 	
 	// for daemonizing
 	pid_t pid;
@@ -465,7 +467,12 @@ int main (int argc, char **argv) {
 	config.output_POV_E = 0;
 	config.output_POV_P_Q = 0;
 	
-	//TODO:: ADD DEFAULT CALIBRATIONS HERE ******
+	for(i=0;i<3;i++) {
+		accelCal.offset[i] = 0;
+		accelCal.range[i] = 0;
+		magCal.offset[i] = 0;
+		magCal.range[i] = 0;
+	}	
 	
 	//open file for raw output
 	//fp_rawlog = fopen("raw.log","w");
@@ -553,6 +560,15 @@ int main (int argc, char **argv) {
 		{
 			fprintf(fp_console,"Using EEPROM calibration values ...\n");
 			dynamic_sensor.offset = data.zero_offset;
+			
+			// IMU calibration
+			for(i=0;i<3;i++) {
+				accelCal.offset[i] = (short)((data.accel_min[i] + data.accel_max[i]) / 2);
+				accelCal.range[i] = (short)(data.accel_max[0] - accelCal.offset[0]);
+				magCal.offset[i] = (short)((data.mag_min[i] + data.mag_max[i]) / 2);
+				magCal.range[i] = (short)(data.mag_max[0] - magCal.offset[0]);
+			}
+			
 		}
 		else
 		{
@@ -626,9 +642,11 @@ int main (int argc, char **argv) {
 		}
 		else
 		{
-			//TODO: Get Cal from EEPROM!
-			//set_cal(0, accel_cal_file);
-			//set_cal(1, mag_cal_file);		
+			usleep(10000);
+			mpu9150_set_accel_cal(&accelCal);
+			usleep(10000);
+			mpu9150_set_mag_cal(&magCal);
+			usleep(10000);	
 		}
 		
 		// poll sensors for offset compensation
