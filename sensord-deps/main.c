@@ -561,7 +561,7 @@ int main (int argc, char **argv) {
 			fprintf(fp_console,"Using EEPROM calibration values ...\n");
 			dynamic_sensor.offset = data.zero_offset;
 			
-			// IMU calibration
+			// IMU calibration; calculate range and offsets
 			for(i=0;i<3;i++) {
 				accelCal.offset[i] = (short)((data.accel_min[i] + data.accel_max[i]) / 2);
 				accelCal.range[i] = (short)(data.accel_max[0] - accelCal.offset[0]);
