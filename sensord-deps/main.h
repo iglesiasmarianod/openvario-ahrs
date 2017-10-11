@@ -24,5 +24,3 @@ typedef struct
 } t_io_mode;
 
 void print_runtime_config(void);
-//TEST
-
