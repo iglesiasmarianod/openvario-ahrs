@@ -161,11 +161,21 @@ void print_rpyl(mpudata_t *mpu, int sock)
 	int sock_err;
 	char s[256];
 	
-	//  removed  RAD_TO_DEGREE conversion
-	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,0,0\r\n",
-	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE * 10,
-	       		mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE * 10,
-	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE * 10);
+	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,%0.0f,0\r\n",
+			// orientations
+	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE * 10.,
+	       		mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE * 10.,
+	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE * 10.),
+	
+			// sideslip & delta yaw don't seem to be used by XCSoar
+			// Magnitude of "G"
+			sqrt(
+				pow(mpu->calibratedAccel[VEC3_X], 2) + 
+				pow(mpu->calibratedAccel[VEC3_Y], 2) +
+			     	pow(mpu->calibratedAccel[VEC3_Z], 2)
+			) * 1000. * ((mpu->calibratedAccel[VEC3_Z] < 0.) ? -1. : 1.)
+	;	
+	
 	
 	// Send NMEA string via socket to XCSoar
 	if ((sock_err = send(sock, s, strlen(s), 0)) < 0)
