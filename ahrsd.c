@@ -174,7 +174,7 @@ void print_rpyl(mpudata_t *mpu, int sock)
 				pow(mpu->calibratedAccel[VEC3_Y], 2) +
 			     	pow(mpu->calibratedAccel[VEC3_Z], 2)
 			) * 1000. * ((mpu->calibratedAccel[VEC3_Z] < 0.) ? -1. : 1.)
-	;	
+	);	
 	
 	
 	// Send NMEA string via socket to XCSoar
