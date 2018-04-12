@@ -479,6 +479,7 @@ int main (int argc, char **argv) {
 				break;
 				
 			case '?':
+			default:
 				printf("Unknown option %c\n", optopt);
 				printf("Usage: sensorcal [OPTION]\n%s",Usage);
 				printf("Exiting ...\n");

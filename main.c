@@ -716,21 +716,20 @@ int main (int argc, char **argv) {
 		// Open Separate Socket for LevilAHRS driver
 		sock_imu = socket(AF_INET, SOCK_STREAM, 0);
 		if (sock_imu == -1)
-			fprintf(stderr, "could not create socket\n");
+			fprintf(stderr, "could not create IMU socket\n");
 
 		server_imu.sin_addr.s_addr = inet_addr("127.0.0.1");
 		server_imu.sin_family = AF_INET;
 		server_imu.sin_port = htons(AHRS_PORT);
   
-		
 		// try to connect to XCSoar
 		while (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
-			fprintf(stderr, "failed to connect, trying again\n");
+			fprintf(stderr, "failed to connect (main socket), trying again\n");
 			fflush(stdout);
 			sleep(1);
 		}
 		while (connect(sock_imu, (struct sockaddr *)&server_imu, sizeof(server_imu)) < 0) {
-			fprintf(stderr, "failed to connect (IMU), trying again\n");
+			fprintf(stderr, "failed to connect (IMU socket), trying again\n");
 			fflush(stdout);
 			sleep(1);
 		}		
