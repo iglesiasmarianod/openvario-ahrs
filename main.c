@@ -44,14 +44,16 @@
 #include "ms5611.h"
 #include "ams5915.h"
 #include "ads1110.h"
-#include "configfile_parser.h"
+
 #include "vario.h"
 #include "AirDensity.h"
 #include "24c16.h"
 
 #include "mpu9150.h"
 #include "linux_glue.h"
-#include "../ahrs_settings.h"
+#include "ahrs_settings.h"
+
+#include "configfile_parser.h"
 
 #define I2C_ADDR 0x76
 #define PRESSURE_SAMPLE_RATE 	20	// sample rate of pressure values (Hz)
@@ -76,6 +78,7 @@ t_ms5611 static_sensor;
 t_ms5611 tep_sensor;
 t_ams5915 dynamic_sensor;
 t_ads1110 voltage_sensor;
+t_mpu9150 mpu_sensor;
 	
 // configuration object
 t_config config;
@@ -402,7 +405,7 @@ void pressure_measurement_handler(void)
 *  14: Inconsistent pitch data between gyro and acc.
 *  15: Inconsistent yaw data between gyro and acc.
 */
-void AHRS_message(mpudata_t *mpu, int sock)
+void AHRS_message(mpudata_t *mpu, t_mpu9150 *mpucal, int sock)
 {
 	
 	int sock_err;
@@ -410,18 +413,18 @@ void AHRS_message(mpudata_t *mpu, int sock)
 	
 	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,%0.0f,0\r\n",
 			// orientations
-	       		mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE * 10.,
-	       		mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE * 10.,
-	       		mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE * 10.),
+	       		(mpu->fusedEuler[VEC3_X] + mpucal->roll_adjust) * RAD_TO_DEGREE * 10.,
+	       		(mpu->fusedEuler[VEC3_Y] + mpucal->pitch_adjust) * RAD_TO_DEGREE * 10.,
+	       		(mpu->fusedEuler[VEC3_Z] + mpucal->yaw_adjust) * RAD_TO_DEGREE * 10.,
 	
 			// sideslip & delta yaw don't seem to be used by XCSoar
 			// Magnitude of "G"
 			sqrt(
 				pow(mpu->calibratedAccel[VEC3_X], 2) + 
 				pow(mpu->calibratedAccel[VEC3_Y], 2) +
-			     	pow(mpu->calibratedAccel[VEC3_Z], 2)
-			) * 1000. * ((mpu->calibratedAccel[VEC3_Z] < 0.) ? -1. : 1.)
-	);	
+			    pow(mpu->calibratedAccel[VEC3_Z], 2)
+			) * ((mpu->calibratedAccel[VEC3_Z] < 0.) ? -1000. : 1000.)
+	);
 	
 	// Send NMEA string via socket to XCSoar
 	if ((sock_err = send(sock, s, strlen(s), 0)) < 0)
@@ -442,9 +445,10 @@ int main (int argc, char **argv) {
 	
 	t_24c16 eeprom;
 	t_eeprom_data data;
+	
 	mpudata_t mpu;
-	caldata_t accelCal;
-	caldata_t magCal;
+	t_mpu9150_cal accel_cal;
+	t_mpu9150_cal mag_cal;
 	
 	// for daemonizing
 	pid_t pid;
@@ -474,12 +478,22 @@ int main (int argc, char **argv) {
 	config.output_POV_E = 0;
 	config.output_POV_P_Q = 0;
 	
+	
 	for(i=0;i<3;i++) {
-		accelCal.offset[i] = 0;
-		accelCal.range[i] = 0;
-		magCal.offset[i] = 0;
-		magCal.range[i] = 0;
+		accel_cal.offset[i] = 0;
+		accel_cal.range[i] = 0;
+		mag_cal.offset[i] = 0;
+		mag_cal.range[i] = 0;
 	}	
+
+	mpu_sensor.accel_cal = accel_cal;
+	mpu_sensor.mag_cal = mag_cal;
+	mpu_sensor.rotation = 1;
+	mpu_sensor.roll_adjust = 0.0;
+	mpu_sensor.pitch_adjust = 0.0;
+	mpu_sensor.yaw_adjust = 0.0;
+
+
 	
 	//open file for raw output
 	//fp_rawlog = fopen("raw.log","w");
@@ -489,7 +503,7 @@ int main (int argc, char **argv) {
 	
 	// get config file options
 	if (fp_config != NULL)
-		cfgfile_parser(fp_config, &static_sensor, &tep_sensor, &dynamic_sensor, &voltage_sensor, &config);
+		cfgfile_parser(fp_config, &static_sensor, &tep_sensor, &dynamic_sensor, &voltage_sensor, &mpu_sensor, &config);
 	
 	// check if we are a daemon or stay in foreground
 	if (g_foreground == TRUE)
@@ -570,10 +584,10 @@ int main (int argc, char **argv) {
 			
 			// IMU calibration values; calculate range and offsets
 			for(i=0;i<3;i++) {
-				accelCal.offset[i] = (short)((data.accel_min[i] + data.accel_max[i]) / 2);
-				accelCal.range[i] = (short)(data.accel_max[0] - accelCal.offset[0]);
-				magCal.offset[i] = (short)((data.mag_min[i] + data.mag_max[i]) / 2);
-				magCal.range[i] = (short)(data.mag_max[0] - magCal.offset[0]);
+				mpu_sensor.accel_cal.offset[i] = (short)((data.accel_min[i] + data.accel_max[i]) / 2);
+				mpu_sensor.accel_cal.range[i] = (short)(data.accel_max[0] - mpu_sensor.accel_cal.offset[0]);
+				mpu_sensor.mag_cal.offset[i] = (short)((data.mag_min[i] + data.mag_max[i]) / 2);
+				mpu_sensor.mag_cal.range[i] = (short)(data.mag_max[0] - mpu_sensor.mag_cal.offset[0]);
 			}
 			
 		}
@@ -643,16 +657,16 @@ int main (int argc, char **argv) {
 			ads1110_init(&voltage_sensor);
 			
 		// Initialise MPU
-		if (mpu9150_init(I2C_BUS, MPU_SAMPLE_RATE, YAW_MIX_FACTOR))
+		if (mpu9150_init(I2C_BUS, MPU_SAMPLE_RATE, YAW_MIX_FACTOR, mpu_sensor.rotation))
 		{
 			fprintf(stderr, "Failed to open MPU9150\n");
 		}
 		else
 		{
 			usleep(10000);
-			mpu9150_set_accel_cal(&accelCal);
+			mpu9150_set_accel_cal(&mpu_sensor.accel_cal);
 			usleep(10000);
-			mpu9150_set_mag_cal(&magCal);
+			mpu9150_set_mag_cal(&mpu_sensor.mag_cal);
 			usleep(10000);	
 			memset(&mpu, 0, sizeof(mpudata_t));
 		}
@@ -737,7 +751,7 @@ int main (int argc, char **argv) {
 			
 			// TODO: All timings are hard-coded
 			if (mpu9150_read(&mpu) == 0)
-				AHRS_message(&mpu, sock_imu);
+				AHRS_message(&mpu, &mpu_sensor, sock_imu);
 			
 		
 		} // while(1)

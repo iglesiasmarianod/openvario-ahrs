@@ -10,8 +10,8 @@ CFLAGS = -Wall
 MPUDIR = mpu9150
 EMPLDIR = ${MPUDIR}/eMPL
 GLUEDIR = ${MPUDIR}/glue
-TMPSENSDIR = sensord-deps
-SENSORD_REAL_PATH = ../sensord
+TMPSENSDIR = .
+SENSORD_REAL_PATH = .
 
 GIT_VERSION := $(shell cd $(SENSORD_REAL_PATH); git describe --dirty)
 
@@ -30,13 +30,7 @@ OBJS_SENSORCAL = $(OBJS) 24c16.o ams5915.o
 
 OBJS_SENSORD = $(OBJS) ms5611.o ams5915.o ads1110.o nmea.o timer.o KalmanFilter1d.o cmdline_parser.o configfile_parser.o vario.o AirDensity.o 24c16.o
 
-all : ahrsd imucal sensorcal sensord
-
-ahrsd : $(OBJS) ahrsd.o
-	$(CC) $(CFLAGS) $(OBJS) ahrsd.o -lm -o ahrsd
-
-imucal : $(OBJS) imucal.o
-	$(CC) $(CFLAGS) $(OBJS) imucal.o -lm -o imucal
+all : sensorcal sensord
 
 sensorcal : $(OBJS_SENSORCAL) sensorcal.o
 	$(CC) $(CFLAGS) $(OBJS_SENSORCAL) sensorcal.o -lrt -lm -o sensorcal
@@ -44,11 +38,6 @@ sensorcal : $(OBJS_SENSORCAL) sensorcal.o
 sensord : $(OBJS_SENSORD) main.o
 	$(CC) $(CFLAGS) $(OBJS_SENSORD) main.o -lrt -lm -o sensord
 	
-ahrsd.o : ahrsd.c
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c ahrsd.c
-	
-imucal.o : imucal.c
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) $(DEFS) -c imucal.c
 
 ## --------- TEMP SCAFFOLD -----------------
 
@@ -113,7 +102,7 @@ inv_mpu.o : $(EMPLDIR)/inv_mpu.c
 	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -c $(EMPLDIR)/inv_mpu.c
 
 clean:
-	rm -f *.o
+	rm -f *.o sensorcal sensord
 
 veryclean: clean
-	rm -f ahrsd imucal sensorcal sensord
+	rm -f sensorcal sensord

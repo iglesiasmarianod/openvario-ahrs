@@ -93,11 +93,44 @@ int calibrate_mpu9150(t_eeprom_data* data, short unsigned int mag)
 	short change;
 	int k;
 	int done = 0;
+	int rotation;
+	int ch;
 	
 	if (sample_rate == 0)
 		return 1;
+		
 
-	if (mpu9150_init(i2c_bus, sample_rate, 0))
+	printf("\nI need to know how your Openvario will be installed.\n");
+	printf("Enter '0, 1, 2 or 3, below, or press 'ESC' to cancel\n");
+	printf("0 = Normal landscape\n");
+	printf("1 = portrait (rotated clockwise 90 degrees)\n");
+	printf("2 = landscape (upside down)\n");
+	printf("3 = portrait (rotated anticlockwise 90 degrees)\n");
+
+	ch = get_keypress_blocking();
+	switch(ch)
+	{
+		case 27:
+			return 1;
+			break;
+		case 49:
+			rotation = 1;
+			break;
+		case 50:
+			rotation = 2;
+			break;
+		case 51:
+			rotation = 3;
+			break;
+		case 48:
+		default:
+			printf("Invalid orientation. Assuming '0'\n");
+			rotation = 0;
+			break;
+	}
+		
+
+	if (mpu9150_init(i2c_bus, sample_rate, 0, rotation))
 	{
 		printf("Failed to connect to mpu9150\n");
 		return 1;
@@ -226,6 +259,7 @@ int main (int argc, char **argv) {
 	t_24c16 eeprom;
 	t_eeprom_data data;
 	
+	
 	int exit_code=0;
 	int result;
 	int c;
@@ -233,6 +267,7 @@ int main (int argc, char **argv) {
 	int ch;
 	char zero[1]={0x00};
 	
+
 
 	// usage message
 	const char* Usage = "\n"\

@@ -32,7 +32,17 @@
 typedef struct {
 	short offset[3];
 	short range[3];
-} caldata_t;
+}  t_mpu9150_cal;
+
+
+typedef struct {
+	t_mpu9150_cal accel_cal;
+	t_mpu9150_cal mag_cal;
+	int rotation;
+	float roll_adjust;
+	float pitch_adjust;
+	float yaw_adjust;
+} t_mpu9150;
 
 typedef struct {
 	short rawGyro[3];
@@ -55,15 +65,15 @@ typedef struct {
 
 
 void mpu9150_set_debug(int on);
-int mpu9150_init(int i2c_bus, int sample_rate, int yaw_mixing_factor);
+int mpu9150_init(int i2c_bus, int sample_rate, int yaw_mixing_factor, int rotation);
 void mpu9150_exit();
 int mpu9150_read(mpudata_t *mpu);
 int mpu9150_read_dmp(mpudata_t *mpu);
 int mpu9150_read_mag(mpudata_t *mpu);
-void mpu9150_set_accel_cal(caldata_t *cal);
-void mpu9150_set_mag_cal(caldata_t *cal);
+void mpu9150_set_accel_cal(t_mpu9150_cal *cal);
+void mpu9150_set_mag_cal(t_mpu9150_cal *cal);
 
-int set_orientation(signed char gyro_orientation[9]);
+int set_orientation(int rotation, signed char gyro_orientation[9]);
 
 
 #endif /* MPU9150_H */

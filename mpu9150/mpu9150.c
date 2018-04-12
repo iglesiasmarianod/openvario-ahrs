@@ -43,22 +43,22 @@ int debug_on;
 int yaw_mixing_factor;
 
 int use_accel_cal;
-caldata_t accel_cal_data;
+t_mpu9150_cal accel_cal_data;
 
 int use_mag_cal;
-caldata_t mag_cal_data;
+t_mpu9150_cal mag_cal_data;
 
 void mpu9150_set_debug(int on)
 {
 	debug_on = on;
 }
 
-int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor)
+int mpu9150_init(int i2c_bus, int sample_rate, int mix_factor, int rotation)
 {
 											
 	signed char gyro_orientation[9];
 																
-	set_orientation(gyro_orientation);		
+	set_orientation(rotation, gyro_orientation);		
 	
 	if (i2c_bus < 0 || i2c_bus > 3)
 		return -1;
@@ -168,7 +168,7 @@ void mpu9150_exit()
 	// TODO: Should turn off the sensors too
 }
 
-void mpu9150_set_accel_cal(caldata_t *cal)
+void mpu9150_set_accel_cal(t_mpu9150_cal *cal)
 {
 	int i;
 	long bias[3];
@@ -178,7 +178,7 @@ void mpu9150_set_accel_cal(caldata_t *cal)
 		return;
 	}
 
-	memcpy(&accel_cal_data, cal, sizeof(caldata_t));
+	memcpy(&accel_cal_data, cal, sizeof(t_mpu9150_cal));
 
 	for (i = 0; i < 3; i++) {
 		if (accel_cal_data.range[i] < 1)
@@ -201,7 +201,7 @@ void mpu9150_set_accel_cal(caldata_t *cal)
 	use_accel_cal = 1;
 }
 
-void mpu9150_set_mag_cal(caldata_t *cal)
+void mpu9150_set_mag_cal(t_mpu9150_cal *cal)
 {
 	int i;
 
@@ -210,7 +210,7 @@ void mpu9150_set_mag_cal(caldata_t *cal)
 		return;
 	}
 
-	memcpy(&mag_cal_data, cal, sizeof(caldata_t));
+	memcpy(&mag_cal_data, cal, sizeof(t_mpu9150_cal));
 
 	for (i = 0; i < 3; i++) {
 		if (mag_cal_data.range[i] < 1)
@@ -549,7 +549,7 @@ unsigned short inv_orientation_matrix_to_scalar(signed char *mtx)
 
 
 
-int set_orientation(signed char gyro_orientation[9])
+int set_orientation(int rotation, signed char gyro_orientation[9])
 {
 	
 	// normal landscape
@@ -571,7 +571,8 @@ int set_orientation(signed char gyro_orientation[9])
 											
 	//signed char gyro_orientation[9];
 	int orientation, charval;
-	
+
+/*	
 	FILE *f;
 	char *sys_conf_file = SYS_CONF_FILE;
 	char buff[10], rot[10]; 
@@ -612,11 +613,11 @@ int set_orientation(signed char gyro_orientation[9])
 	} 
 	else
 		printf("Cannot determine orientation from system config file!");
+	*/
 	
+	printf("Using orientation %d", rotation);
 	
-	printf("Using orientation %d", orientation);
-	
-	switch(orientation) 
+	switch(rotation) 
 	{
 		case 1: 	
 			memcpy(gyro_orientation, gyro_orientation_1, sizeof gyro_orientation_1);
@@ -629,10 +630,10 @@ int set_orientation(signed char gyro_orientation[9])
 			break;																	
 		case 0: 	
 		default:
-			orientation = 0;
+			rotation = 0;
 			memcpy(gyro_orientation, gyro_orientation_0, sizeof gyro_orientation_0);	
 	}																	
 
-	return orientation;
+	return rotation;
 	
 }

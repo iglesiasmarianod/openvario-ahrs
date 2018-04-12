@@ -26,12 +26,16 @@
 #include "ms5611.h"
 #include "ams5915.h"
 #include "ads1110.h"
+#include "mpu9150/mpu9150.h"
+
 #include "configfile_parser.h"
+
+
 
 extern int g_debug;
 extern FILE *fp_console;
 
-int cfgfile_parser(FILE *fp, t_ms5611 *static_sensor, t_ms5611 *tek_sensor, t_ams5915 *dynamic_sensor, t_ads1110 *voltage_sensor, t_config *config)
+int cfgfile_parser(FILE *fp, t_ms5611 *static_sensor, t_ms5611 *tek_sensor, t_ams5915 *dynamic_sensor, t_ads1110 *voltage_sensor, t_mpu9150 *mpu_sensor, t_config *config)
 {
 	char line[70];
 	char tmp[20];
@@ -108,6 +112,34 @@ int cfgfile_parser(FILE *fp, t_ms5611 *static_sensor, t_ms5611 *tek_sensor, t_am
 					// get config data for dynamic sensor
 					sscanf(line, "%s %f", tmp, &voltage_sensor->voltage_factor);
 				}
+
+				// check for mpu orientation config
+				if (strcmp(tmp,"mpu_rotation") == 0)
+				{
+					// get config data for mpu orientation
+					sscanf(line, "%s %d", tmp, &mpu_sensor->rotation);
+				}
+
+				// check for mpu roll adjustment
+				if (strcmp(tmp,"roll_adjust") == 0)
+				{
+					// get config data for mpu roll adjustment
+					sscanf(line, "%s %f", tmp, &mpu_sensor->roll_adjust);
+				}
+
+				// check for mpu pitch adjustment
+				if (strcmp(tmp,"pitch_adjust") == 0)
+				{
+					// get config data for mpu pitch adjustment
+					sscanf(line, "%s %f", tmp, &mpu_sensor->pitch_adjust);
+				}
+
+				// check for mpu yaw adjustment
+				if (strcmp(tmp,"yaw_adjust") == 0)
+				{
+					// get config data for mpu yaw adjustment
+					sscanf(line, "%s %f", tmp, &mpu_sensor->yaw_adjust);
+				}				
 			}
 	
 			
