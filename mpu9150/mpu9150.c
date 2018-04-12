@@ -568,11 +568,11 @@ int set_orientation(int rotation, signed char gyro_orientation[9])
 	signed char gyro_orientation_3[9]	= { 1, 0, 0,
 						    0, 0, -1, 
 						    0, 1, 0 };	
-											
+/*											
 	//signed char gyro_orientation[9];
 	int orientation, charval;
 
-/*	
+
 	FILE *f;
 	char *sys_conf_file = SYS_CONF_FILE;
 	char buff[10], rot[10]; 
