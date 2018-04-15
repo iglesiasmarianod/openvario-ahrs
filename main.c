@@ -157,6 +157,7 @@ int NMEA_message_handler(int sock)
 	// some local variables
 	float vario;
 	int sock_err;
+
 	static int nmea_counter = 1;
 	int result;
 	char s[256];
@@ -443,6 +444,9 @@ int main (int argc, char **argv) {
 	int result;
 	int sock_err = 0;
 	
+	int sock_imu_connected = 0;
+	struct timeval imu_last_sample, curr_time;
+		
 	t_24c16 eeprom;
 	t_eeprom_data data;
 	
@@ -461,7 +465,8 @@ int main (int argc, char **argv) {
 	struct sigaction sigact;
 	
 	// socket communication
-	int sock, sock_imu;
+	int sock;
+	int sock_imu;
 	struct sockaddr_in server;
 	struct sockaddr_in server_imu;
 	
@@ -585,9 +590,9 @@ int main (int argc, char **argv) {
 			// IMU calibration values; calculate range and offsets
 			for(i=0;i<3;i++) {
 				mpu_sensor.accel_cal.offset[i] = (short)((data.accel_min[i] + data.accel_max[i]) / 2);
-				mpu_sensor.accel_cal.range[i] = (short)(data.accel_max[0] - mpu_sensor.accel_cal.offset[0]);
+				mpu_sensor.accel_cal.range[i] = (short)(data.accel_max[i] - mpu_sensor.accel_cal.offset[i]);
 				mpu_sensor.mag_cal.offset[i] = (short)((data.mag_min[i] + data.mag_max[i]) / 2);
-				mpu_sensor.mag_cal.range[i] = (short)(data.mag_max[0] - mpu_sensor.mag_cal.offset[0]);
+				mpu_sensor.mag_cal.range[i] = (short)(data.mag_max[i] - mpu_sensor.mag_cal.offset[i]);
 			}
 			
 		}
@@ -669,6 +674,7 @@ int main (int argc, char **argv) {
 			mpu9150_set_mag_cal(&mpu_sensor.mag_cal);
 			usleep(10000);	
 			memset(&mpu, 0, sizeof(mpudata_t));
+			gettimeofday(&imu_last_sample, NULL);
 		}
 		
 		// poll sensors for offset compensation
@@ -723,21 +729,20 @@ int main (int argc, char **argv) {
 		server_imu.sin_port = htons(AHRS_PORT);
   
 		// try to connect to XCSoar
-		while (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) {
+		while (connect(sock, (struct sockaddr *)&server, sizeof(server)) < 0) 
+		{
 			fprintf(stderr, "failed to connect (main socket), trying again\n");
 			fflush(stdout);
 			sleep(1);
 		}
-		while (connect(sock_imu, (struct sockaddr *)&server_imu, sizeof(server_imu)) < 0) {
-			fprintf(stderr, "failed to connect (IMU socket), trying again\n");
-			fflush(stdout);
-			sleep(1);
-		}		
+		
+		
 				
 		// socket connected
 		// main data acquisition loop
 		while(sock_err >= 0)
-		{	int result;
+		{	
+			int result;
 		
 			result = usleep(12500);
 			if (result != 0)
@@ -748,22 +753,40 @@ int main (int argc, char **argv) {
 			pressure_measurement_handler();
 			sock_err = NMEA_message_handler(sock);
 			
-			// TODO: All timings are hard-coded
-			if (mpu9150_read(&mpu) == 0)
-				AHRS_message(&mpu, &mpu_sensor, sock_imu);
-			
+			if(!sock_imu_connected) 
+			{
+				if (connect(sock_imu, (struct sockaddr *)&server_imu, sizeof(server_imu)) >= 0) 
+					sock_imu_connected = 1;
+				else
+				{
+					fprintf(stderr, "failed to connect (IMU socket)\n");
+					fflush(stdout);
+				}
+			}
+			if(sock_imu_connected)
+			{
+				// compare timer
+				gettimeofday(&curr_time, NULL);
+				if((curr_time.tv_usec - imu_last_sample.tv_usec) >= (1e6/AHRS_SAMPLE_RATE_HZ))
+				{
+					if (mpu9150_read(&mpu) == 0)
+						AHRS_message(&mpu, &mpu_sensor, sock_imu);
+				}
+			}
 		
-		} // while(1)
+		} 
 		
 		// connection dropped
 		close(sock);
 		close(sock_imu);
-	}
+	} // while(1)
 	return 0;
 }
 
 void print_runtime_config(void)
 {
+	int i;
+	
 	// print actual used config
 	fprintf(fp_console,"=========================================================================\n");
 	fprintf(fp_console,"Runtime Configuration:\n");
@@ -779,6 +802,20 @@ void print_runtime_config(void)
 	fprintf(fp_console,"Sensor TOTAL:\n");
 	fprintf(fp_console,"  Offset: \t%f\n",dynamic_sensor.offset);
 	fprintf(fp_console,"  Linearity: \t%f\n", dynamic_sensor.linearity);
+	fprintf(fp_console,"Accelerometer:\n");
+	for(i=0;i<3;i++) 
+	{
+		fprintf(fp_console,"Offset %d:\t%d\n", i, mpu_sensor.accel_cal.offset[i]);
+		fprintf(fp_console,"Range %d:\t%d\n", i, mpu_sensor.accel_cal.range[i]);
+	}
+	fprintf(fp_console,"Magnetometer:\n");	
+	for(i=0;i<3;i++) 
+	{	
+		fprintf(fp_console,"Offset %d:\t%d\n", i, mpu_sensor.mag_cal.offset[i]);
+		fprintf(fp_console,"Range %d:\t%d\n", i, mpu_sensor.mag_cal.range[i]);
+	}
+	
+	fprintf(fp_console,"Range %d:\t%d\n", i, mpu_sensor.mag_cal.range[i]);
 	fprintf(fp_console,"=========================================================================\n");
 	
 }
