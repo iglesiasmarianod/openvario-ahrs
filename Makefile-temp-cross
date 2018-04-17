@@ -1,5 +1,6 @@
 #
-# Cross build makefile for eMPL Linux userland implementation
+# Temporary makefile for building sensord out of treee with Yocto toolchain
+# Source Yocto environment file then run with make -f Makefile-temp-cross
 #
 
 ### cross-build defs ###
@@ -19,110 +20,56 @@ INCDIR = $(STAGEDIR)/include
 # specific to Yocto toolchain for Angstrom
 CC = ${TOOLDIR}/arm-angstrom-linux-gnueabi/arm-angstrom-linux-gnueabi-gcc
 CFLAGS = -Wall -mfloat-abi=hard -mfpu=vfp -fsingle-precision-constant -B$(LIBDIR) -L${LIBDIR}
-
-### end cross-build defs ###
-
-
+EXECUTABLE = sensord sensorcal
+_OBJ_MPU = inv_mpu.o inv_mpu_dmp_motion_driver.o linux_glue.o mpu9150.o quaternion.o vector3d.o
+_OBJ = ms5611.o ams5915.o ads1110.o main.o nmea.o timer.o KalmanFilter1d.o cmdline_parser.o configfile_parser.o vario.o AirDensity.o 24c16.o $(_OBJ_MPU) 
+_OBJ_CAL = 24c16.o ams5915.o inv_mpu.o inv_mpu_dmp_motion_driver.o linux_glue.o mpu9150.o quaternion.o vector3d.o sensorcal.o $(_OBJ_MPU) 
+OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+OBJ_CAL = $(patsubst %,$(ODIR)/%,$(_OBJ_CAL))
 MPUDIR = mpu9150
 EMPLDIR = ${MPUDIR}/eMPL
 GLUEDIR = ${MPUDIR}/glue
-TMPSDIR = .
-SENSORD_REAL_PATH = .
+LIBS = -lrt -lm -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) 
+ODIR = obj
+BINDIR = /opt/bin/
+GIT_VERSION := $(shell git describe --dirty)
+VPATH += %.c $(MPUDIR):$(EMPLDIR):$(GLUEDIR)
 
-GIT_VERSION := $(shell cd $(SENSORD_REAL_PATH); git describe --dirty)
+#targets
 
-# add -DI2C_DEBUG for debugging
-DEFS = -DEMPL_TARGET_LINUX -DMPU9150 -DAK8975_SECONDARY -I${INCDIR} -L${LIBDIR}  -DVERSION_GIT=\"$(GIT_VERSION)\"
+$(ODIR)/%.o: %.c
+	mkdir -p $(ODIR)
+	$(CC) -DVERSION_GIT=\"$(GIT_VERSION)\" $(LIBS) -c -o $@ $< $(CFLAGS)
+		
+all: sensord sensorcal
 
-
-OBJS = inv_mpu.o \
-       inv_mpu_dmp_motion_driver.o \
-       linux_glue.o \
-       mpu9150.o \
-       quaternion.o \
-       vector3d.o
-       
-OBJS_SENSORCAL = $(OBJS) 24c16.o ams5915.o
-
-OBJS_SENSORD = $(OBJS) ms5611.o ams5915.o ads1110.o nmea.o timer.o KalmanFilter1d.o cmdline_parser.o configfile_parser.o vario.o AirDensity.o 24c16.o
-
-
-all : sensorcal sensord
-
-sensorcal : $(OBJS_SENSORCAL) sensorcal.o
-	$(CC) $(CFLAGS) $(OBJS_SENSORCAL) sensorcal.o -lrt -lm -o sensorcal
+version.h: 
+	@echo Git version $(GIT_VERSION)
 	
-sensord : $(OBJS_SENSORD) main.o
-	$(CC) $(CFLAGS) $(OBJS_SENSORD) main.o -lrt -lm -o sensord
-
-
-
-## --------- TEMP SCAFFOLD -----------------
-
-sensorcal.o : $(TMPSDIR)/sensorcal.c $(TMPSDIR)/def.h
-	$(CC) $(CFLAGS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSDIR)/sensorcal.c
-
-24c16.o : $(TMPSDIR)/24c16.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/24c16.c
+doc: 
+	@echo Running doxygen to create documentation
+	doxygen
 	
-ams5915.o : $(TMPSDIR)/ams5915.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/ams5915.c
+sensord: $(OBJ)
+	$(CC) $(LIBS) -g -o $@ $^
 	
-ms5611.o : $(TMPSDIR)/ms5611.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/ms5611.c
-	
-ads1110.o : $(TMPSDIR)/ads1110.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/ads1110.c
-	
-main.o : $(TMPSDIR)/main.c
-	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -I $(MPUDIR) -c $(TMPSDIR)/main.c
-	
-nmea.o : $(TMPSDIR)/nmea.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/nmea.c
-	
-timer.o : $(TMPSDIR)/timer.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/timer.c
-	
-KalmanFilter1d.o : $(TMPSDIR)/KalmanFilter1d.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/KalmanFilter1d.c
-	
-cmdline_parser.o : $(TMPSDIR)/cmdline_parser.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/cmdline_parser.c
-	
-configfile_parser.o : $(TMPSDIR)/configfile_parser.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/configfile_parser.c
-	
-vario.o : $(TMPSDIR)/vario.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/vario.c
-	
-AirDensity.o : $(TMPSDIR)/AirDensity.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(TMPSDIR)/AirDensity.c
-	
-## --------- END TEMP SCAFFOLD
+sensorcal: $(OBJ_CAL)
+	$(CC) $(LIBS) -g -o $@ $^
 
-mpu9150.o : $(MPUDIR)/mpu9150.c
-	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -c $(MPUDIR)/mpu9150.c
+install: sensord sensorcal
+	install -D sensord $(BINDIR)/$(EXECUTABLE)
+	
+test: test.o obj/nmea.o
+	$(CC) $(LIBS) -g -o $@ $^
 
-quaternion.o : $(MPUDIR)/quaternion.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(MPUDIR)/quaternion.c
+sensord_fastsample: sensord_fastsample.o
+	$(CC) $(LIBS) -g -o $@ $^
 
-vector3d.o : $(MPUDIR)/vector3d.c
-	$(CC) $(CFLAGS) $(DEFS) -c $(MPUDIR)/vector3d.c
-
-linux_glue.o : $(GLUEDIR)/linux_glue.c
-	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -c $(GLUEDIR)/linux_glue.c
-
-inv_mpu_dmp_motion_driver.o : $(EMPLDIR)/inv_mpu_dmp_motion_driver.c
-	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -c $(EMPLDIR)/inv_mpu_dmp_motion_driver.c
-
-inv_mpu.o : $(EMPLDIR)/inv_mpu.c
-	$(CC) $(CFLAGS) $(DEFS) -I $(EMPLDIR) -I $(GLUEDIR) -c $(EMPLDIR)/inv_mpu.c
-
-
-install:
-	scp sensord sensorcal root@openvario:/home/root
-
-
+i2c_test: i2c_test.o ms5611.o
+	$(CC) $(LIBS) -g -o $@ $^
+	
 clean:
-	rm -f *.o sensorcal sensord
+	rm -f $(ODIR)/*.o *~ core $(EXECUTABLE)
+	rm -fr doc
 
+.PHONY: clean all doc

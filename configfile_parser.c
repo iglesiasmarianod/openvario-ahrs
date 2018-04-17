@@ -26,7 +26,7 @@
 #include "ms5611.h"
 #include "ams5915.h"
 #include "ads1110.h"
-#include "mpu9150/mpu9150.h"
+#include "mpu9150.h"
 
 #include "configfile_parser.h"
 

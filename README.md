@@ -2,12 +2,9 @@
 John Wells
 
 
-A work in progress driver for the MPU9150 chip that is currently sitting unused in the [OpenVario Glide Computer](http://www.openvario.org).
+A driver for the MPU9150 chip that is currently unused in the [OpenVario Glide Computer](http://www.openvario.org).
 
-Currently, the driver aims to provide output compatible with the XCSoar LevilAHRS driver.
-
-
-Ultimately, once proven, the code will be combined into the OpenVario sensord and sensorcal source trees.
+The driver provides output compatible with the XCSoar LevilAHRS driver on TCP port 2000.
 
 
 
@@ -17,43 +14,44 @@ You can either compile the code yourself, or just install a pre-built binary.
 
 To compile yourself, use git to fetch the code. Clone this repository. Then jump to "Compiling the driver" below.
 
-To install a pre-built binary, grab [ahrsd](http://glidist.jfwhome.com/ahrsd) and [imucal](http://glidist.jfwhome.com/imucal) and jump to "Installation" below.
+To install a pre-built binary, grab [sensord](http://glidist.com/temp/sensord) and [sensorcal](http://glidist.com/temp/sensorcal) and jump to "Installation" below.
 
 
 # Compiling the driver
 
-There will be three ways to compile and test the driver.
+The driver is incorporated into sensord, and will compile with 
+<code>bitbake sensord</code> as usual. If you want to build out of tree, 
+you can cross-compile the code making reference to the 
+OpenVario tool chain, using <code>Makefile-temp-cross</code>:
 
-1. Build the file as a recipe as part of the Openvario build system, then test the resultant image. This is not available yet.
-2. Cross-compile the code making reference to the OpenVario tool chain, and transfer the resultant files to your OpenVario.
-3. Build the file on a Linux desktop/laptop computer. This is only really for developers who want to modify the code and test that it compiles, as the resultant programmes will only run on the machine you compile it on, and are unlikely to do anything other than tell you that the MPU9150 IMU is unavailable.
-
-Option (2) uses <code>Makefile-cross</code>. Option (3) uses <code>Makefile-native</code>.
-
-For Options (1) and (2), remember to source the environment file for the OpenEmbedded toolchain. The exact command will depend on where the OpenVario build system is installed, but will be something like:
+First source the environment file for the OpenEmbedded toolchain. 
+The exact command will depend on where the OpenVario build system is installed, 
+but will be something like:
 
         user@mydesktop:~$ source ../rootfs/environment-xxxxxxx
 
-A recommendation is to create a symbolic link to the make file you want to use:
+Then make sensord with:
 
-        user@mydesktop:~$ cd openvario-ahrs
-        user@mydesktop:~/openvario-ahrs$ ln -s Makefile-native Makefile
-
-After that you can just type <code>make</code> to build the code.
-
-The result is two executables called <code>ahrsd</code> and <code>imucal</code>.
+        user@mydesktop:~$ make -f Makefile-temp-cross
 
 
 # Installation
 
-Copy ahrs and imucal anywhere on your OpenVario for testing. For example, for now, /home/root is fine.
+Copy sensord and sensorcal to your /opt/bin directory. To do this, you will need to 
+ensure that sensord is not running, and then remount your file system read-write:
 
-The programs need to know the installed orientation of your openvario in your panel. 
+	root@mopenvario:~# mount -o remount,rw /
+	
+You will also need to update your /opt/conf/sensord.conf file to include 
+the new settings. You could copy across the version provided here, but 
+that would overwtite your changed settings, such as your voltage calibration value. 
+Instead, copy the new  settings in the sensord.conf file here over to your file and adjust as needed.
 
-They get this by reading the <code>/boot/config.uEnv</code> file. If you don't have one, create it,
-and add the following to it:
+The most important option in sensord.conf is the orientation, set in 
+mpu_rotation. The programs need to know the installed orientation of 
+your openvario in your panel. 
 
-<code>rotation=X</code>
+<code>mpu_rotation X</code>
 
 Where X is a number 0 - 3:
 * 0 = Normal landscape
@@ -61,40 +59,45 @@ Where X is a number 0 - 3:
 * 2 = Landscape, upside down
 * 3 = Portrait, rotated 270 degrees
 
+Note that if your openvario is non-standard (e.g. the screen is stuck on upside down), 
+you may have to try a different number.
+
+The other new options in sensord.conf (roll_adjust, pitch_adjust and yaw_adjust) are just to make 
+final "tweaks" to orientation, if for example, your sensor board is 
+installed slightly wonky. Values should be at most one or two degrees, and for most people should be zero.
 
 
-# Calibration
+
+# Initialisation and Calibration
 
 You'll need to calibrate the accelerometer and magnetometer before using them for the first time.
 
-First run <code>./imucal -a</code> and slowly move your openvario through all
+To do this, you can run sensorcal. Sensorcal stores calibration data in the EEPROM, 
+which will need to be re-initialised. 
+The full set of commands will look something like the below (refer to 
+the Openvario documentation for full details on the EEPROM):
+
+	root@mopenvario:~# sensorcal -i
+	root@mopenvario:~# sensorcal -s XXXXXX
+	root@mopenvario:~# sensorcal -c
+
+The first command erases the EEPROM. The second re-initialises it with a custom serial number. Replace 'XXXXXX' with any six-digit code. The third runs the calibration.	
+
+Run through all calibration options (you will need to recalibrate your 
+pressure sensors). When prompted, slowly move your openvario through all
 orientations in three dimensions. Slowly is the the key. 
 We are trying to measure gravity only and sudden movements will 
 induce unwanted accelerations.
 
 The values will update whenever there is a change in one of the min/max
-values, so when you see no more changes you can enter ctrl-c to exit
-the program.
+values, so when you see no more changes hit ESC to move on.
 
-When it finishes, the program will create an <code>accelcal.txt</code> file
-recording the min/max values.
-
-Do the same for the magnetometer by running <code>imucal -m</code>. After ending the program with ctrl-c, 
-a calibration file called <code>magcal.txt</code>
-will be written.
-
-Leave the two calibration files, <code>accelcal.txt</code> and <code>magcal.txt</code>, in the
-same directory as the <code>ahrsd</code> program, they will be used by default.
+You will be asked to repeat the process for both the accelerometer and the magnetometer. 
 
 
-# Run
+# Running
 
-For now you have to run ahrsd manually. Exit to the shell and run <code>nohup ./ahrsd &</code>, 
-then restart XCSoar with <code>/opt/bin/ovmenu-ng.sh</code>. 
-Alternatively, you might find it easiest to run it under a separate console (e.g. via SSH) 
-while XCSoar is in the foreground.
-
-<code>./ahrsd</code>
+The driver will run automatically as part of sensord.
 
 In XCSoar, add a new device: 
 * Port = TCP Port
@@ -106,7 +109,7 @@ You'll also need to add an AHRS screen to your XCSoar screen/layout profile.
 
 # Copyright
 
-The majority of the code is based on the Linux-MPU9150 sample app by Pansenti. 
+The MPU9150 driver layer code is based on the Linux-MPU9150 sample app by Pansenti. 
 Original source is unavailable, but license file is intact.
 
 The code uses the InvenSense Embedded Motion Driver v5.1.1 SDK
