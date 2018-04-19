@@ -414,9 +414,9 @@ void AHRS_message(mpudata_t *mpu, t_mpu9150 *mpucal, int sock)
 	
 	sprintf(s, "$RPYL,%0.0f,%0.0f,%0.0f,0,0,%0.0f,0\r\n",
 			// orientations
-	       		(mpu->fusedEuler[VEC3_X] + mpucal->roll_adjust) * RAD_TO_DEGREE * 10.,
-	       		(mpu->fusedEuler[VEC3_Y] + mpucal->pitch_adjust) * RAD_TO_DEGREE * 10.,
-	       		(mpu->fusedEuler[VEC3_Z] + mpucal->yaw_adjust) * RAD_TO_DEGREE * 10.,
+	       		((mpu->fusedEuler[VEC3_X] * RAD_TO_DEGREE) + mpucal->roll_adjust) * 10.,
+	       		((mpu->fusedEuler[VEC3_Y] * RAD_TO_DEGREE) + mpucal->pitch_adjust) * 10.,
+	       		((mpu->fusedEuler[VEC3_Z] * RAD_TO_DEGREE) + mpucal->yaw_adjust) * 10.,
 	
 			// sideslip & delta yaw don't seem to be used by XCSoar
 			// Magnitude of "G"
@@ -769,6 +769,7 @@ int main (int argc, char **argv) {
 				gettimeofday(&curr_time, NULL);
 				if((curr_time.tv_usec - imu_last_sample.tv_usec) >= (1e6/AHRS_SAMPLE_RATE_HZ))
 				{
+					imu_last_sample = curr_time;
 					if (mpu9150_read(&mpu) == 0)
 						AHRS_message(&mpu, &mpu_sensor, sock_imu);
 				}

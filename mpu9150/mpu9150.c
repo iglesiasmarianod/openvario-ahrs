@@ -37,7 +37,7 @@ static int data_fusion(mpudata_t *mpu);
 static unsigned short inv_row_2_scale(const signed char *row);
 static unsigned short inv_orientation_matrix_to_scalar(signed char *mtx);
 
-
+extern int g_debug;
 
 int debug_on;
 int yaw_mixing_factor;
@@ -243,14 +243,14 @@ int mpu9150_read_dmp(mpudata_t *mpu)
 		return -1;
 
 	if (dmp_read_fifo(mpu->rawGyro, mpu->rawAccel, mpu->rawQuat, &mpu->dmpTimestamp, &sensors, &more) < 0) {
-		printf("dmp_read_fifo() failed\n");
+		if(g_debug > 1)printf("dmp_read_fifo() failed\n");
 		return -1;
 	}
 
 	while (more) {
 		// Fell behind, reading again
 		if (dmp_read_fifo(mpu->rawGyro, mpu->rawAccel, mpu->rawQuat, &mpu->dmpTimestamp, &sensors, &more) < 0) {
-			printf("dmp_read_fifo() failed\n");
+			if(g_debug > 1)printf("dmp_read_fifo() failed [2]\n");
 			return -1;
 		}
 	}
